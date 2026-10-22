@@ -3,29 +3,392 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout
-  title="Clinic Website"
-  description="A clean foundation for a professional clinic website."
+  title="Clinic Homepage Preview"
+  description="Mobile-first clinic homepage visual foundation."
 >
-  <main class="min-h-screen bg-white text-neutral-800">
-    <div class="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-8 sm:px-10">
-      <header class="border-b border-neutral-200 pb-5">
-        <p class="text-sm font-medium tracking-wide text-neutral-500">CLINIC WEBSITE</p>
-      </header>
+  <main class="clinic-page">
+    <div class="paper-grain" aria-hidden="true"></div>
 
-      <section class="flex flex-1 flex-col justify-center py-20">
-        <p class="mb-4 text-sm font-medium text-neutral-500">PROJECT FOUNDATION</p>
-        <h1 class="max-w-2xl text-4xl font-semibold tracking-tight text-neutral-900 sm:text-6xl">
-          A clean start.
-        </h1>
-        <p class="mt-5 max-w-xl text-base leading-7 text-neutral-600 sm:text-lg">
-          The technical foundation is being prepared before clinic branding,
-          content, appointments, and patient sign-in are added.
-        </p>
-      </section>
+    <header class="clinic-header">
+      <div class="brand-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+      </div>
+      <div class="brand-placeholder">
+        <span class="brand-name">CLINIC NAME</span>
+        <span class="brand-note">A place for better care</span>
+      </div>
+    </header>
 
-      <footer class="border-t border-neutral-200 pt-5 text-sm text-neutral-500">
-        Built with accessibility, privacy, and reliability in mind.
-      </footer>
-    </div>
+    <section class="hero" aria-label="Clinic introduction">
+      <p class="eyebrow">WELCOME</p>
+      <h1>Your health,<br />at the centre.</h1>
+      <p class="intro">A calm, considered space for the care you need.</p>
+
+      <div class="image-placeholder" role="img" aria-label="Reserved space for a photograph of the main clinic room">
+        <span class="image-frame" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <rect x="4.5" y="5.5" width="23" height="21" rx="2" stroke="currentColor" stroke-width="1.3"/>
+            <circle cx="12" cy="12" r="2.2" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M6 23l6.5-6 4.5 4 3.5-3 5.5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="image-label">CLINIC ROOM IMAGE</span>
+        <span class="image-subtitle">Photograph will be added here</span>
+      </div>
+    </section>
+
+    <section class="lower-panel" aria-label="Clinic details">
+      <div class="fabric fabric-one" aria-hidden="true"></div>
+      <div class="fabric fabric-two" aria-hidden="true"></div>
+      <div class="fabric fabric-three" aria-hidden="true"></div>
+      <div class="fabric-grain" aria-hidden="true"></div>
+
+      <div class="location">
+        <span class="location-dot" aria-hidden="true"></span>
+        <span>CLINIC LOCATION</span>
+      </div>
+      <p class="location-note">Your address will appear here</p>
+
+      <a class="appointment" href="#appointment" aria-label="Book an appointment (preview only)">
+        <span>Book an appointment</span>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+      <p class="preview-note" id="appointment">Homepage visual preview · content not connected yet</p>
+    </section>
   </main>
 </BaseLayout>
+
+<style>
+  :global(html) {
+    background: #efeef1;
+  }
+
+  :global(body) {
+    margin: 0;
+  }
+
+  .clinic-page {
+    --deep-blue: #22489e;
+    --powder-blue: #bdcdea;
+    --warm-stone: #d6cdc5;
+    --paper: #efeef1;
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    min-height: 100svh;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--deep-blue);
+    background:
+      radial-gradient(ellipse at 8% 8%, rgba(255,255,255,.78), transparent 45%),
+      linear-gradient(180deg, var(--paper) 0%, #e8e9ef 18%, var(--powder-blue) 42%, #7892c7 65%, var(--deep-blue) 100%);
+  }
+
+  .paper-grain {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    pointer-events: none;
+    opacity: .17;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
+    mix-blend-mode: soft-light;
+  }
+
+  .clinic-header {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 27px 23px 12px;
+  }
+
+  .brand-mark {
+    position: relative;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1.5px solid rgba(34,72,158,.7);
+    border-radius: 50%;
+  }
+
+  .brand-mark span {
+    position: absolute;
+    width: 15px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--deep-blue);
+  }
+
+  .brand-mark span + span {
+    transform: rotate(90deg);
+  }
+
+  .brand-placeholder {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .brand-name {
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .18em;
+  }
+
+  .brand-note {
+    font-size: 10px;
+    letter-spacing: .015em;
+    opacity: .7;
+  }
+
+  .hero {
+    padding: 29px 23px 32px;
+  }
+
+  .eyebrow {
+    margin: 0 0 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .22em;
+    opacity: .72;
+  }
+
+  h1 {
+    max-width: 360px;
+    margin: 0;
+    font-size: clamp(37px, 10vw, 54px);
+    font-weight: 500;
+    letter-spacing: -.065em;
+    line-height: .99;
+  }
+
+  .intro {
+    max-width: 275px;
+    margin: 15px 0 23px;
+    font-size: 13px;
+    line-height: 1.65;
+    color: #344d80;
+  }
+
+  .image-placeholder {
+    position: relative;
+    display: flex;
+    min-height: 178px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(34,72,158,.25);
+    border-radius: 3px;
+    background:
+      linear-gradient(145deg, rgba(255,255,255,.42), rgba(189,205,234,.24)),
+      rgba(239,238,241,.18);
+    color: rgba(34,72,158,.75);
+  }
+
+  .image-placeholder::before,
+  .image-placeholder::after {
+    position: absolute;
+    content: "";
+    pointer-events: none;
+  }
+
+  .image-placeholder::before {
+    inset: 9px;
+    border: 1px solid rgba(255,255,255,.38);
+  }
+
+  .image-placeholder::after {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: rgba(255,255,255,.17);
+  }
+
+  .image-frame {
+    display: grid;
+    width: 31px;
+    height: 31px;
+    place-items: center;
+    opacity: .75;
+  }
+
+  .image-frame svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .image-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .17em;
+  }
+
+  .image-subtitle {
+    font-size: 10px;
+    opacity: .75;
+  }
+
+  .lower-panel {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex: 1;
+    min-height: 235px;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    padding: 38px 23px 22px;
+    color: #fff;
+    background:
+      linear-gradient(180deg, rgba(34,72,158,.02) 0%, rgba(34,72,158,.64) 19%, var(--deep-blue) 56%),
+      var(--deep-blue);
+  }
+
+  .fabric {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    inset: -25% -15% 30%;
+    border-radius: 50%;
+    transform: rotate(-8deg);
+  }
+
+  .fabric-one {
+    top: -29%;
+    left: -12%;
+    height: 92%;
+    background:
+      radial-gradient(ellipse at 28% 78%, rgba(255,255,255,.5) 0%, rgba(255,255,255,.14) 3%, transparent 18%),
+      radial-gradient(ellipse at 52% 62%, rgba(189,205,234,.52) 0%, rgba(189,205,234,.18) 8%, transparent 33%),
+      linear-gradient(174deg, transparent 37%, rgba(255,255,255,.14) 43%, rgba(10,32,86,.3) 49%, rgba(255,255,255,.22) 54%, transparent 65%);
+    filter: blur(1.4px);
+  }
+
+  .fabric-two {
+    top: -15%;
+    left: -22%;
+    height: 86%;
+    transform: rotate(8deg) scaleX(1.15);
+    background:
+      radial-gradient(ellipse at 65% 84%, rgba(255,255,255,.42), transparent 22%),
+      linear-gradient(166deg, transparent 42%, rgba(7,24,69,.42) 47%, rgba(255,255,255,.27) 51%, rgba(189,205,234,.12) 55%, transparent 67%);
+    filter: blur(2px);
+    opacity: .82;
+  }
+
+  .fabric-three {
+    top: 2%;
+    left: -18%;
+    height: 70%;
+    transform: rotate(-13deg) scaleX(1.25);
+    background: linear-gradient(178deg, transparent 45%, rgba(255,255,255,.19) 49%, rgba(6,22,65,.26) 53%, transparent 63%);
+    filter: blur(3px);
+    opacity: .7;
+  }
+
+  .fabric-grain {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    pointer-events: none;
+    opacity: .22;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.05' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.3'/%3E%3C/svg%3E");
+    mix-blend-mode: screen;
+    mask-image: linear-gradient(180deg, transparent 0%, #000 26%, #000 100%);
+  }
+
+  .location {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .16em;
+  }
+
+  .location-dot {
+    width: 7px;
+    height: 7px;
+    border: 1px solid rgba(255,255,255,.9);
+    border-radius: 50%;
+    box-shadow: 0 0 9px rgba(255,255,255,.4);
+  }
+
+  .location-note {
+    margin: 8px 0 22px 16px;
+    color: rgba(255,255,255,.75);
+    font-size: 12px;
+  }
+
+  .appointment {
+    display: flex;
+    min-height: 49px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 16px;
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 3px;
+    color: var(--deep-blue);
+    background: #efeef1;
+    font-size: 12px;
+    font-weight: 650;
+    text-decoration: none;
+    transition: background .2s ease, transform .2s ease;
+  }
+
+  .appointment:hover {
+    background: #fff;
+    transform: translateY(-1px);
+  }
+
+  .arrow {
+    font-size: 19px;
+    font-weight: 400;
+  }
+
+  .preview-note {
+    margin: 13px 0 0;
+    color: rgba(255,255,255,.54);
+    font-size: 9px;
+    text-align: center;
+  }
+
+  @media (min-width: 640px) {
+    .clinic-page {
+      min-height: 100svh;
+    }
+
+    .clinic-header {
+      padding: 34px 7vw 16px;
+    }
+
+    .hero {
+      padding: 35px 7vw 38px;
+    }
+
+    .image-placeholder {
+      min-height: 230px;
+    }
+
+    .lower-panel {
+      min-height: 260px;
+      padding-right: 7vw;
+      padding-left: 7vw;
+    }
+
+    .appointment {
+      max-width: 420px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .appointment {
+      transition: none;
+    }
+  }
+</style>
