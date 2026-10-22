@@ -1,1 +1,188 @@
-use existing file content and replace only hero background URL with https://images.pexels.com/photos/7422520/pexels-photo-7422520.jpeg?auto=compress&cs=tinysrgb&w=2400
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Your Clinic — Thoughtful, Personal Care"
+  description="A calm, modern clinic website preview designed around clear information and patient-first care."
+>
+  <main class="page-shell">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-photo" aria-hidden="true"></div>
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Your Clinic home">
+          <span class="brand-symbol" aria-hidden="true">
+            <span></span><span></span>
+          </span>
+          <span class="brand-name">YOUR CLINIC</span>
+        </a>
+        <a class="top-link" href="#contact">Contact <span aria-hidden="true">↗</span></a>
+      </header>
+
+      <div class="hero-content" id="top">
+        <p class="kicker"><span class="kicker-line"></span> HEALTHCARE, WITH HEART</p>
+        <h1 id="hero-title">A calmer way<br />to feel <em>better.</em></h1>
+        <p class="hero-copy">
+          Thoughtful care starts with listening. Find the support, clarity and
+          confidence you need to take your next step.
+        </p>
+        <div class="hero-actions">
+          <a class="primary-action" href="#contact">Explore care <span aria-hidden="true">↗</span></a>
+          <a class="text-action" href="#approach">Our approach <span aria-hidden="true">↓</span></a>
+        </div>
+      </div>
+
+      <div class="hero-bottom">
+        <div class="location-chip">
+          <span class="location-dot" aria-hidden="true"></span>
+          <span>YOUR CITY · CLINIC LOCATION</span>
+        </div>
+        <p class="hero-index"><span>01</span> / CARE THAT CENTRES YOU</p>
+      </div>
+      <div class="fabric" aria-hidden="true"><span></span><span></span><span></span></div>
+    </section>
+
+    <section class="approach" id="approach">
+      <div class="section-label"><span>01</span><span>THE APPROACH</span></div>
+      <div class="approach-grid">
+        <h2>Good care feels<br /><em>human.</em></h2>
+        <div class="approach-copy">
+          <p class="approach-lead">You deserve to feel heard, informed and cared for — not rushed through a checklist.</p>
+          <p>Our approach begins with a conversation. We make space for your questions, explain your options in plain language, and help you understand what comes next.</p>
+          <a class="underlined-link" href="#contact">A little more about us <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <div class="values">
+        <article class="value">
+          <span class="value-number">01</span>
+          <div><h3>Listen first</h3><p>Your concerns deserve time, attention and respect.</p></div>
+          <span class="value-mark" aria-hidden="true">↗</span>
+        </article>
+        <article class="value">
+          <span class="value-number">02</span>
+          <div><h3>Clear answers</h3><p>Understand your care without the confusing jargon.</p></div>
+          <span class="value-mark" aria-hidden="true">↗</span>
+        </article>
+        <article class="value">
+          <span class="value-number">03</span>
+          <div><h3>Care with you</h3><p>Decisions are conversations, made together.</p></div>
+          <span class="value-mark" aria-hidden="true">↗</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="contact" id="contact">
+      <div class="contact-grain" aria-hidden="true"></div>
+      <div class="contact-inner">
+        <p class="kicker light-kicker"><span class="kicker-line"></span> YOUR NEXT STEP</p>
+        <h2>Let’s start<br /><em>with a conversation.</em></h2>
+        <p class="contact-copy">Clinic details and appointment booking will be connected once the clinic’s real information is provided.</p>
+        <a class="contact-action" href="mailto:hello@example.com?subject=Clinic%20website%20enquiry">Email the clinic <span aria-hidden="true">↗</span></a>
+        <p class="demo-note">DESIGN PREVIEW · CONTACT DETAILS ARE PLACEHOLDERS</p>
+      </div>
+      <footer class="footer">
+        <a class="brand footer-brand" href="#top"><span class="brand-symbol" aria-hidden="true"><span></span><span></span></span><span class="brand-name">YOUR CLINIC</span></a>
+        <span>CARE, WITH CLARITY.</span>
+        <a href="#top" class="back-top">Back to top ↑</a>
+      </footer>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  :global(*) { box-sizing: border-box; }
+  :global(html) { scroll-behavior: smooth; background: #efeee9; }
+  :global(body) { margin: 0; min-width: 320px; color: #1e2c31; font-family: Inter, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  :global(a) { color: inherit; }
+  .page-shell { overflow: hidden; background: #efeee9; }
+  .hero { position: relative; isolation: isolate; display: flex; min-height: min(900px, 100svh); min-height: max(720px, 100svh); flex-direction: column; overflow: hidden; color: #f8f7f2; background: #263f48; }
+  .hero-photo { position: absolute; z-index: -3; inset: 0; background-image: url("https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=2400&q=85"); background-position: center 46%; background-size: cover; transform: scale(1.015); animation: settle-in 1.2s ease-out both; }
+  .hero-shade { position: absolute; z-index: -2; inset: 0; background: linear-gradient(180deg, rgba(143,178,217,.38) 0%, rgba(100,145,199,.55) 48%, rgba(34,72,158,.88) 100%); }
+  .grain, .contact-grain { position: absolute; z-index: -1; inset: 0; pointer-events: none; opacity: .11; mix-blend-mode: soft-light; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E"); }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 27px clamp(22px, 6.2vw, 94px); border-bottom: 1px solid rgba(255,255,255,.18); }
+  .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+  .brand-symbol { position: relative; display: inline-grid; width: 31px; height: 31px; place-items: center; border: 1px solid rgba(255,255,255,.74); border-radius: 50%; }
+  .brand-symbol span { position: absolute; width: 13px; height: 1px; background: currentColor; }
+  .brand-symbol span + span { transform: rotate(90deg); }
+  .brand-name { font-size: 10px; font-weight: 700; letter-spacing: .2em; }
+  .top-link { display: inline-flex; align-items: center; gap: 17px; font-size: 12px; text-decoration: none; }
+  .top-link span { font-size: 17px; }
+  .hero-content { width: min(760px, 100%); margin: auto 0; padding: 76px clamp(24px, 10.8vw, 164px) 94px; }
+  .kicker { display: flex; align-items: center; gap: 11px; margin: 0 0 25px; color: #d9d4c5; font-size: 9px; font-weight: 700; letter-spacing: .2em; }
+  .kicker-line { width: 28px; height: 1px; background: #c6bfae; }
+  h1, h2 { margin: 0; font-weight: 400; letter-spacing: -.065em; }
+  h1 { font-size: clamp(58px, 8.6vw, 116px); line-height: .94; }
+  h1 em, h2 em { color: #d3c9b5; font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
+  .hero-copy { max-width: 360px; margin: 27px 0 0; color: rgba(248,247,242,.79); font-size: 14px; line-height: 1.8; }
+  .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 28px; margin-top: 32px; }
+  .primary-action { display: inline-flex; min-height: 50px; align-items: center; justify-content: space-between; gap: 34px; padding: 0 17px; color: #24383e; background: #e9e5db; font-size: 11px; font-weight: 650; text-decoration: none; transition: background .2s, transform .2s; }
+  .primary-action:hover { transform: translateY(-2px); background: #fff; }
+  .primary-action span { font-size: 17px; }
+  .text-action { display: inline-flex; align-items: center; gap: 13px; color: #f8f7f2; font-size: 11px; text-decoration: none; }
+  .text-action span { color: #d3c9b5; font-size: 16px; }
+  .hero-bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 clamp(22px, 6.2vw, 94px) 28px; }
+  .location-chip { display: flex; align-items: center; gap: 10px; font-size: 9px; letter-spacing: .13em; }
+  .location-dot { width: 6px; height: 6px; border-radius: 50%; background: #d3c9b5; box-shadow: 0 0 0 4px rgba(211,201,181,.15); }
+  .hero-index { margin: 0; color: rgba(255,255,255,.68); font-size: 8px; letter-spacing: .14em; }
+  .hero-index span { color: #fff; }
+  .fabric { position: absolute; z-index: -1; right: -10%; bottom: -55px; left: -10%; height: 100px; opacity: .5; }
+  .fabric span { position: absolute; left: -5%; width: 110%; height: 100px; border-top: 1px solid rgba(255,255,255,.48); border-radius: 50%; transform: rotate(-2deg); }
+  .fabric span:nth-child(2) { top: 12px; opacity: .5; transform: rotate(2deg); }
+  .fabric span:nth-child(3) { top: 25px; opacity: .3; transform: rotate(-4deg); }
+  .approach { padding: 112px clamp(24px, 10.8vw, 164px) 120px; background: #efeee9; }
+  .section-label { display: flex; gap: 18px; color: #687577; font-size: 9px; letter-spacing: .18em; }
+  .section-label span:first-child { color: #a28e6b; }
+  .approach-grid { display: grid; grid-template-columns: 1.05fr .8fr; gap: 10%; align-items: start; margin-top: 48px; }
+  h2 { font-size: clamp(45px, 6.5vw, 78px); line-height: 1.02; }
+  .approach h2 em { color: #9a8b70; }
+  .approach-copy { max-width: 460px; padding-top: 7px; }
+  .approach-copy p { color: #647174; font-size: 13px; line-height: 1.9; }
+  .approach-copy .approach-lead { margin-top: 0; color: #263a40; font-family: Georgia, "Times New Roman", serif; font-size: 22px; line-height: 1.45; }
+  .underlined-link { display: inline-flex; gap: 18px; align-items: center; margin-top: 13px; padding-bottom: 9px; border-bottom: 1px solid #9e9a8e; font-size: 11px; text-decoration: none; }
+  .values { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 92px; border-top: 1px solid #d4d2c9; }
+  .value { display: flex; min-height: 160px; align-items: flex-start; gap: 15px; padding: 25px 18px 10px 0; border-bottom: 1px solid #d4d2c9; }
+  .value + .value { padding-left: 24px; border-left: 1px solid #d4d2c9; }
+  .value-number { color: #9a8b70; font-size: 9px; letter-spacing: .1em; }
+  .value h3 { margin: 0 0 9px; color: #25393f; font-size: 15px; font-weight: 500; letter-spacing: -.02em; }
+  .value p { max-width: 190px; margin: 0; color: #707a7a; font-size: 11px; line-height: 1.8; }
+  .value-mark { margin-left: auto; color: #9a8b70; font-size: 15px; }
+  .contact { position: relative; isolation: isolate; color: #f6f4ed; background: #203b43; }
+  .contact-grain { z-index: -1; opacity: .09; }
+  .contact-inner { padding: 100px clamp(24px, 10.8vw, 164px) 110px; }
+  .light-kicker { color: #cfc4ad; }
+  .contact h2 { max-width: 900px; font-size: clamp(44px, 7vw, 88px); }
+  .contact h2 em { color: #d0c4ab; }
+  .contact-copy { max-width: 420px; margin: 24px 0 0; color: rgba(246,244,237,.69); font-size: 12px; line-height: 1.8; }
+  .contact-action { display: inline-flex; min-width: 190px; align-items: center; justify-content: space-between; margin-top: 28px; padding: 16px 17px; color: #263d43; background: #e8e3d8; font-size: 11px; text-decoration: none; }
+  .contact-action span { font-size: 16px; }
+  .demo-note { margin: 20px 0 0; color: rgba(246,244,237,.42); font-size: 8px; letter-spacing: .13em; }
+  .footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 22px clamp(22px, 6.2vw, 94px); border-top: 1px solid rgba(255,255,255,.15); color: rgba(246,244,237,.6); font-size: 8px; letter-spacing: .14em; }
+  .footer-brand { color: #f6f4ed; }
+  .footer-brand .brand-symbol { width: 25px; height: 25px; }
+  .footer-brand .brand-name { font-size: 9px; }
+  .back-top { color: inherit; text-decoration: none; letter-spacing: .04em; }
+  @keyframes settle-in { from { opacity: .65; transform: scale(1.06); } to { opacity: 1; transform: scale(1.015); } }
+  @media (min-width: 1200px) { .hero-content { padding-left: 13vw; } }
+  @media (max-width: 650px) {
+    .hero { min-height: 760px; min-height: 100svh; }
+    .topbar { padding-top: 20px; padding-bottom: 20px; }
+    .hero-content { padding-top: 70px; padding-bottom: 75px; }
+    .hero-copy { max-width: 300px; font-size: 13px; }
+    .hero-bottom { align-items: flex-end; }
+    .hero-index { max-width: 110px; text-align: right; line-height: 1.7; }
+    .approach { padding-top: 78px; padding-bottom: 82px; }
+    .approach-grid { grid-template-columns: 1fr; gap: 30px; margin-top: 35px; }
+    .approach-copy .approach-lead { font-size: 20px; }
+    .values { grid-template-columns: 1fr; margin-top: 55px; }
+    .value { min-height: 115px; padding: 22px 0; }
+    .value + .value { padding-left: 0; border-left: 0; }
+    .value p { max-width: 250px; }
+    .contact-inner { padding-top: 80px; padding-bottom: 82px; }
+    .footer { flex-wrap: wrap; }
+    .footer > span { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { :global(html) { scroll-behavior: auto; } .hero-photo { animation: none; } .primary-action { transition: none; } }
+</style>
