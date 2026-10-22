@@ -5,6 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 // by Supabase Auth, Row Level Security, and database constraints—not the UI.
 export default defineConfig({
   output: "static",
+  site: "https://som76377-alt.github.io",
+  base: "/Doctor-",
   vite: {
     plugins: [tailwindcss()],
   },
