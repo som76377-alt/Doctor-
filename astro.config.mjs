@@ -1,12 +1,16 @@
 import { defineConfig } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 
-// Static-first foundation. Patient data and booking rules must be enforced
-// by Supabase Auth, Row Level Security, and database constraints—not the UI.
+// GitHub Pages publishes this project under /Doctor-.
+// Vercel publishes it at the domain root, so it must use / instead.
+const isGitHubPagesBuild = process.env.GITHUB_ACTIONS === "true";
+
 export default defineConfig({
   output: "static",
-  site: "https://som76377-alt.github.io",
-  base: "/Doctor-",
+  site: isGitHubPagesBuild
+    ? "https://som76377-alt.github.io"
+    : "https://doctor-clinic-preview.vercel.app",
+  base: isGitHubPagesBuild ? "/Doctor-" : "/",
   vite: {
     plugins: [tailwindcss()],
   },
