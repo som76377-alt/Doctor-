@@ -74,6 +74,25 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </div>
     </section>
 
+
+    <section class="doctor-feature" id="doctor" aria-labelledby="doctor-title">
+      <div class="doctor-feature-inner">
+        <p class="doctor-eyebrow"><span></span> MEET YOUR DOCTOR</p>
+        <div class="doctor-feature-portrait">
+          <img src="https://drupal-cdn-hfaeddcdbng5hfbg.a01.azurefd.net/sites/default/files/2026-03/dr-sanju-lall.jpg" alt="Dr. Sanju Lall, portrait from her public Apollo Hospitals profile" loading="lazy" />
+        </div>
+        <div class="doctor-feature-copy">
+          <p class="doctor-overline">DENTISTRY · PUBLIC PROFILE DESIGN DEMO</p>
+          <h2 id="doctor-title">Dr. Sanju Lall</h2>
+          <p class="doctor-specialty">Prosthodontics · Implantology · Full-mouth rehabilitation</p>
+          <p class="doctor-qualifications">BDS · MDS · FPFA (USA) · MFDI · MIDA</p>
+          <p class="doctor-description">Apollo Hospitals lists Dr. Lall as a Professor and Senior Consultant with more than 30 years of experience. Her published profile also notes teaching experience and clinical work in India and Nepal.</p>
+          <p class="doctor-demo-note">This is a design preview using public professional information. Dr. Lall is not represented as affiliated with “Your Clinic.” Verify permission before commercial use.</p>
+          <a class="doctor-more" href="https://www.apollohospitals.com/doctors/dentist/delhi/dr-sanju-lall" target="_blank" rel="noreferrer">View official profile <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+
     <section class="contact" id="contact">
       <div class="contact-grain" aria-hidden="true"></div>
       <div class="contact-inner">
@@ -125,7 +144,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   :global(a) { color: inherit; }
   .page-shell { overflow: hidden; background: #efeee9; }
   .hero { position: relative; isolation: isolate; display: flex; min-height: min(900px, 100svh); min-height: max(720px, 100svh); flex-direction: column; overflow: hidden; color: #f8f7f2; background: #263f48; }
-  .hero-photo { position: absolute; z-index: -3; inset: 0; background-image: url("https://images.pexels.com/photos/31844508/pexels-photo-31844508.jpeg?auto=compress&cs=tinysrgb&w=2400"); background-position: center 46%; background-size: cover; transform: scale(1.42); transform-origin: center center; will-change: transform; }
+  .hero-photo { position: absolute; z-index: -3; inset: 0; background-image: url("https://images.pexels.com/photos/7108396/pexels-photo-7108396.jpeg?auto=compress&cs=tinysrgb&w=2400"); background-position: center 46%; background-size: cover; transform: scale(1.42); transform-origin: center center; will-change: transform; }
   .hero-shade { position: absolute; z-index: -2; inset: 0; background: linear-gradient(180deg, rgba(143,178,217,.38) 0%, rgba(100,145,199,.55) 48%, rgba(34,72,158,.88) 100%); }
   .grain, .contact-grain { position: absolute; z-index: -1; inset: 0; pointer-events: none; opacity: .11; mix-blend-mode: soft-light; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E"); }
   .topbar { display: flex; align-items: center; justify-content: space-between; padding: 27px clamp(22px, 6.2vw, 94px); border-bottom: 1px solid rgba(255,255,255,.18); }
@@ -210,4 +229,21 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     .footer > span { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { :global(html) { scroll-behavior: auto; } .hero-photo { animation: none; } .primary-action { transition: none; } }
+
+  .doctor-feature { padding: 100px clamp(24px, 9vw, 130px) 112px; background: #e8e7e0; color: #1e2c31; }
+  .doctor-feature-inner { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .doctor-eyebrow { display:flex; align-items:center; gap:10px; margin:0 0 28px; color:#6c7775; font-size:10px; font-weight:700; letter-spacing:.2em; }
+  .doctor-eyebrow span { width:24px; height:1px; background:#82908b; }
+  .doctor-feature-portrait { width:min(330px, 80vw); height:370px; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; }
+  .doctor-feature-portrait img { display:block; max-width:100%; max-height:100%; object-fit:contain; object-position:center bottom; mix-blend-mode:multiply; }
+  .doctor-feature-copy { max-width:690px; margin-top:30px; }
+  .doctor-overline { margin:0 0 16px; color:#77827e; font-size:9px; font-weight:700; letter-spacing:.18em; }
+  .doctor-feature h2 { font-size:clamp(46px, 7vw, 78px); line-height:1; }
+  .doctor-specialty { margin:18px 0 0; font-size:16px; line-height:1.6; }
+  .doctor-qualifications { margin:12px 0 0; color:#64716e; font-size:12px; letter-spacing:.06em; }
+  .doctor-description { max-width:590px; margin:26px auto 0; color:#596765; font-size:14px; line-height:1.9; }
+  .doctor-demo-note { max-width:590px; margin:18px auto 0; color:#777f7b; font-size:11px; line-height:1.7; }
+  .doctor-more { display:inline-flex; gap:25px; align-items:center; margin-top:28px; padding-bottom:8px; border-bottom:1px solid #82908b; font-size:12px; text-decoration:none; }
+  .doctor-more span { font-size:17px; }
+
 </style>
