@@ -145,8 +145,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     if (pages.length < 2) return;
 
     const pageFlip = new PageFlip(book, {
-      width: Math.max(320, window.innerWidth),
-      height: Math.max(520, window.innerHeight - 58),
+      width: Math.max(280, book.clientWidth),
+      height: Math.max(420, book.clientHeight),
       size: "stretch",
       minWidth: 280,
       maxWidth: 1600,
@@ -159,12 +159,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       startPage: 0,
       autoSize: false,
       showCover: false,
-      mobileScrollSupport: true,
-      swipeDistance: 36,
+      mobileScrollSupport: false,
+      swipeDistance: 8,
       clickEventForward: true,
       useMouseEvents: true,
       showPageCorners: true,
-      disableFlipByClick: true
+      disableFlipByClick: false
     });
 
     pageFlip.loadFromHTML(pages);
@@ -197,10 +197,15 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     pageFlip.on("init", (event) => updateControls(event.data?.page ?? 0));
     updateControls(0);
 
-    // The library measures its own pages; ask it to recalculate after device rotation.
-    window.addEventListener("orientationchange", () => {
-      window.setTimeout(() => pageFlip.update(), 180);
-    }, { passive: true });
+    // Keep the live fold attached to the pointer on touchscreens and desktop.
+    // Recalculate using the actual book viewport after rotation or viewport changes.
+    const resizeBook = () => {
+      const width = Math.max(280, book.clientWidth);
+      const height = Math.max(420, book.clientHeight);
+      if (width > 0 && height > 0) pageFlip.update();
+    };
+    window.addEventListener("orientationchange", () => window.setTimeout(resizeBook, 180), { passive: true });
+    window.addEventListener("resize", resizeBook, { passive: true });
   };
 
   if (document.readyState === "loading") {
