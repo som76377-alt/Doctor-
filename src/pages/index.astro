@@ -241,6 +241,7 @@ import PaperTurnCanvas from "../components/PaperTurnCanvas";
     --tear-bottom: calc(100dvh - 168px);
   }
   .injection-stage.is-active { opacity: 1; }
+  .injection-stage[data-paper-error] { opacity: 0 !important; }
 
   /* Only the already-torn region is covered by the second page. */
   .paper-underpage {
