@@ -13,9 +13,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
     <section class="reveal-track" data-reveal-track aria-label="Scroll to reveal the page beneath">
       <div class="reveal-stage" data-reveal-stage>
-        <article class="under-page" data-under-page aria-labelledby="under-title">
+        <article class="under-page" data-under-page aria-labelledby="under-title" aria-hidden="true" inert>
           <div class="under-topline">
-            <a class="under-brand" href="/" tabindex="-1">
+            <a class="under-brand" href="/">
               <span class="brand-mark" aria-hidden="true">+</span>
               <span>YOUR CLINIC</span>
             </a>
@@ -149,12 +149,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   const track = document.querySelector<HTMLElement>("[data-reveal-track]");
   const stage = document.querySelector<HTMLElement>("[data-reveal-stage]");
   const cover = document.querySelector<HTMLElement>("[data-cover-artwork]");
+  const underPage = document.querySelector<HTMLElement>("[data-under-page]");
   const canvas = document.querySelector<HTMLCanvasElement>("[data-paper-canvas]");
   const fallbackLayer = document.querySelector<HTMLElement>("[data-fallback-pieces]");
   const seam = document.querySelector<HTMLElement>("[data-reveal-seam]");
   const engineNote = document.querySelector<HTMLElement>("[data-engine-note]");
 
-  if (track && stage && cover && canvas && fallbackLayer && seam && engineNote) {
+  if (track && stage && cover && underPage && canvas && fallbackLayer && seam && engineNote) {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const state = { progress: 0 };
     const halves: PaperHalf[] = [];
@@ -366,6 +367,15 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     const renderProgress = (rawProgress: number) => {
       state.progress = Math.max(0, Math.min(1, rawProgress));
       const progress = state.progress;
+      const pageIsRevealed = progress >= 0.985 || activeMode === "reduced";
+      underPage.inert = !pageIsRevealed;
+      if (pageIsRevealed) {
+        underPage.removeAttribute("aria-hidden");
+        cover.setAttribute("aria-hidden", "true");
+      } else {
+        underPage.setAttribute("aria-hidden", "true");
+        cover.removeAttribute("aria-hidden");
+      }
       seam.style.opacity = String(Math.min(0.95, progress * 5.2) * Math.max(0, 1 - progress * 1.5));
       seam.style.transform = "translateX(-50%) scaleX(" + Math.max(0.3, 1 - progress * 0.62) + ")";
       engineNote.style.opacity = String(Math.max(0, 1 - progress * 2));
@@ -492,6 +502,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       activeMode = "reduced";
       track.classList.add("reduced-motion-mode");
       cover.style.display = "none";
+      cover.setAttribute("aria-hidden", "true");
+      underPage.inert = false;
+      underPage.removeAttribute("aria-hidden");
       canvas.style.display = "none";
       fallbackLayer.style.display = "none";
       seam.style.display = "none";
@@ -560,6 +573,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           canvas.style.display = "none";
           fallbackLayer.style.display = "none";
           cover.style.display = "none";
+          cover.setAttribute("aria-hidden", "true");
+          underPage.inert = false;
+          underPage.removeAttribute("aria-hidden");
           seam.style.display = "none";
           engineNote.style.display = "none";
           track.classList.add("reduced-motion-mode");
