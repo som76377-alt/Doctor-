@@ -8,6 +8,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 >
   <main class="page-shell">
       <div class="injection-stage" aria-hidden="true">
+        <div class="tear-flap tear-flap-left"></div>
+        <div class="tear-flap tear-flap-right"></div>
+        <div class="tear-gap-shadow"></div>
         <div class="injection-trail"></div>
         <svg class="injection-syringe" viewBox="0 0 80 240" role="presentation" focusable="false" aria-hidden="true">
           <g class="syringe-lines">
@@ -23,7 +26,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </svg>
       </div>
 
-    <section class="hero" aria-labelledby="hero-title">
+    <section class="hero"<section class="hero" aria-labelledby="hero-title">
       <div class="hero-photo" aria-hidden="true"></div>
       <div class="hero-shade" aria-hidden="true"></div>
       <div class="grain" aria-hidden="true"></div>
@@ -144,10 +147,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         const progress = Math.min(1, Math.max(0, latestY / maxScroll));
         const travel = Math.max(0, window.innerHeight - syringeHeight - startY - 18);
         const syringeY = startY + progress * travel;
+        // The tear runs behind the whole syringe, down to the needle tip.
+        const trailHeight = Math.min(window.innerHeight, syringeY + syringeHeight);
+        // As the syringe moves down, both paper edges peel away from the center seam.
+        const openingProgress = Math.min(1, Math.max(0, syringeY / (window.innerHeight * 0.55)));
+        const maxOpening = window.innerWidth <= 650 ? 62 : 92;
+        const openingWidth = 10 + openingProgress * (maxOpening - 10);
 
-        // Move only down the vertical axis; grow the trail to the syringe's back edge.
         stage.style.setProperty("--injection-y", syringeY.toFixed(1) + "px");
-        stage.style.setProperty("--trail-height", syringeY.toFixed(1) + "px");
+        stage.style.setProperty("--trail-height", trailHeight.toFixed(1) + "px");
+        stage.style.setProperty("--tear-gap", openingWidth.toFixed(1) + "px");
         stage.classList.toggle("is-active", latestY > 12);
       };
 
@@ -215,30 +224,78 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     pointer-events: none;
     opacity: 0;
     transition: opacity .18s ease;
-    --injection-x: 50vw;
     --injection-y: 18px;
-    --trail-height: 18px;
+    --trail-height: 168px;
+    --tear-gap: 10px;
+    --tear-flap-width: clamp(48px, 12vw, 112px);
   }
   .injection-stage.is-active { opacity: 1; }
-  .injection-trail {
+  .tear-flap {
     position: absolute;
     top: 0;
-    left: 50vw !important;
-    width: 1.8px;
     height: var(--trail-height);
-    background: #11110f;
-    transform: translateX(-50%) !important;
+    width: var(--tear-flap-width);
+    overflow: visible;
+    background: #efeee9;
+    will-change: left, width;
+  }
+  .tear-flap-left {
+    left: calc(50vw - (var(--tear-gap) / 2) - var(--tear-flap-width));
+    background: linear-gradient(90deg, #dcd7cc 0%, #efede6 42%, #f7f5ed 78%, #cfc8bc 100%);
+    clip-path: polygon(
+      0 0, 100% 0,
+      89% 3%, 100% 7%, 84% 12%, 100% 16%,
+      87% 21%, 100% 26%, 81% 31%, 100% 35%,
+      88% 40%, 100% 45%, 83% 50%, 100% 54%,
+      90% 59%, 100% 64%, 82% 69%, 100% 73%,
+      88% 78%, 100% 83%, 80% 88%, 100% 93%,
+      87% 97%, 100% 100%, 0 100%
+    );
+    filter: drop-shadow(3px 2px 3px rgba(17, 22, 20, .17));
+  }
+  .tear-flap-right {
+    left: calc(50vw + (var(--tear-gap) / 2));
+    background: linear-gradient(90deg, #cfc8bc 0%, #f7f5ed 22%, #efede6 58%, #dcd7cc 100%);
+    clip-path: polygon(
+      0 0, 100% 0, 100% 100%, 0 100%,
+      13% 97%, 0 93%, 20% 88%, 0 83%,
+      12% 78%, 0 73%, 18% 69%, 0 64%,
+      10% 59%, 0 54%, 17% 50%, 0 45%,
+      12% 40%, 0 35%, 19% 31%, 0 26%,
+      13% 21%, 0 16%, 16% 12%, 0 7%, 11% 3%
+    );
+    filter: drop-shadow(-3px 2px 3px rgba(17, 22, 20, .17));
+  }
+  .tear-gap-shadow {
+    position: absolute;
+    top: 0;
+    left: calc(50vw - (var(--tear-gap) / 2));
+    width: var(--tear-gap);
+    height: var(--trail-height);
+    background: linear-gradient(90deg, rgba(20, 25, 23, .18), rgba(20, 25, 23, .035) 24%, transparent 48%, transparent 52%, rgba(20, 25, 23, .035) 76%, rgba(20, 25, 23, .18));
+  }
+  .injection-trail {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 50vw;
+    width: 1.25px;
+    height: var(--trail-height);
+    background: rgba(10, 12, 11, .45);
+    transform: translateX(-50%);
   }
   .injection-syringe {
     position: absolute;
+    z-index: 3;
     top: var(--injection-y);
-    left: 50vw !important;
+    left: 50vw;
     display: block;
     width: 50px;
     height: 150px;
     overflow: visible;
     transform: translateX(-50%);
     color: #11110f;
+    filter: drop-shadow(0 1px 0 rgba(239, 238, 233, .55));
   }
   .syringe-lines {
     fill: none;
@@ -249,8 +306,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     vector-effect: non-scaling-stroke;
   }
   @media (max-width: 650px) {
-    .injection-stage { --injection-x: 50%; }
-    .injection-trail { width: 1.7px; }
+    .injection-stage { --tear-flap-width: clamp(34px, 13vw, 58px); }
+    .tear-gap-shadow { opacity: .85; }
+    .injection-trail { width: 1.1px; }
     .injection-syringe { width: 50px; height: 150px; }
   }
   @media (prefers-reduced-motion: reduce) {
