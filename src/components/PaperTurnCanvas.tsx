@@ -248,7 +248,7 @@ export default function PaperTurnCanvas() {
             sheet={{ width: 0.5, height: pageHeight }}
             stock="printer"
             content={{ type: "image", src: snapshot.left, alt: "Clinic homepage printed on paper", fit: "cover", back: { type: "blank" } }}
-            behavior={{ type: "flip", progress: 0, spine: "right", radius: 0.42 }}
+            behavior={{ type: "flip", progress: 0, spine: "left", radius: 0.42 }}
             surface={{ grain: 0.16, creaseLines: { angle: 90, positions: [0.48, 0.52], strength: 0.22 } }}
           />
           <PaperMesh
@@ -257,7 +257,7 @@ export default function PaperTurnCanvas() {
             sheet={{ width: 0.5, height: pageHeight }}
             stock="printer"
             content={{ type: "image", src: snapshot.right, alt: "Clinic homepage printed on paper", fit: "cover", back: { type: "blank" } }}
-            behavior={{ type: "flip", progress: 0, spine: "left", radius: 0.42 }}
+            behavior={{ type: "flip", progress: 0, spine: "right", radius: 0.42 }}
             surface={{ grain: 0.16, creaseLines: { angle: 90, positions: [0.48, 0.52], strength: 0.22 } }}
           />
         </Canvas>
