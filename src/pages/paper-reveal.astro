@@ -1,0 +1,638 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Paper Reveal — Scroll Animation Prototype"
+  description="An isolated prototype of a scroll-controlled split-paper reveal, with a deformable blue cover and a hidden page beneath."
+>
+  <main class="paper-demo">
+    <a class="back-link" href="/" aria-label="Back to clinic preview">
+      <span aria-hidden="true">←</span> Clinic preview
+    </a>
+
+    <section class="reveal-track" data-reveal-track aria-label="Scroll to reveal the page beneath">
+      <div class="reveal-stage" data-reveal-stage>
+        <article class="under-page" data-under-page aria-labelledby="under-title">
+          <div class="under-topline">
+            <a class="under-brand" href="/" tabindex="-1">
+              <span class="brand-mark" aria-hidden="true">+</span>
+              <span>YOUR CLINIC</span>
+            </a>
+            <span class="under-label">A MORE HUMAN STANDARD</span>
+          </div>
+
+          <div class="under-content">
+            <p class="under-kicker"><span></span> THE THINGS THAT MATTER</p>
+            <h1 id="under-title">Good care<br />starts with <em>you.</em></h1>
+            <p class="under-lead">
+              Behind every appointment should be a person who listens, a plan you understand,
+              and the confidence to ask one more question.
+            </p>
+            <div class="under-details">
+              <div>
+                <span class="detail-index">01</span>
+                <h2>Time to listen</h2>
+                <p>Your story comes before a checklist.</p>
+              </div>
+              <div>
+                <span class="detail-index">02</span>
+                <h2>Clarity, always</h2>
+                <p>Know what happens next, and why.</p>
+              </div>
+              <div>
+                <span class="detail-index">03</span>
+                <h2>Care together</h2>
+                <p>Decisions made with you, not for you.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="under-footer">
+            <span>THOUGHTFUL BY DESIGN</span>
+            <span>01 — 03</span>
+          </div>
+        </article>
+
+        <article class="cover-artwork" data-cover-artwork aria-labelledby="cover-title">
+          <div class="cover-orbit cover-orbit--one" aria-hidden="true"></div>
+          <div class="cover-orbit cover-orbit--two" aria-hidden="true"></div>
+          <div class="cover-shine" aria-hidden="true"></div>
+
+          <header class="cover-masthead">
+            <a class="cover-brand" href="/" tabindex="-1">
+              <span class="cover-mark" aria-hidden="true"><span></span><span></span></span>
+              <span>YOUR CLINIC</span>
+            </a>
+            <span class="cover-edition">A NOTE ON CARE <span>·</span> VOL. 01</span>
+          </header>
+
+          <div class="cover-copy">
+            <p class="cover-eyebrow"><span></span> HEALTHCARE, WITH HEART</p>
+            <h2 id="cover-title">There is more<br />to care than<br /><em>meets the eye.</em></h2>
+            <p class="cover-description">
+              A good experience is built on small things that make a meaningful difference.
+            </p>
+          </div>
+
+          <div class="cover-illustration" aria-hidden="true">
+            <div class="illustration-ring illustration-ring--outer"></div>
+            <div class="illustration-ring illustration-ring--inner"></div>
+            <div class="illustration-core"></div>
+            <span class="illustration-point illustration-point--a"></span>
+            <span class="illustration-point illustration-point--b"></span>
+          </div>
+
+          <footer class="cover-footer">
+            <div class="cover-index"><strong>01</strong><span> / A DIFFERENT PERSPECTIVE</span></div>
+            <div class="scroll-cue">
+              <span>SCROLL TO LOOK CLOSER</span>
+              <span class="scroll-arrow" aria-hidden="true">↓</span>
+            </div>
+          </footer>
+        </article>
+
+        <canvas class="paper-canvas" data-paper-canvas aria-hidden="true"></canvas>
+        <div class="fallback-pieces" data-fallback-pieces aria-hidden="true"></div>
+        <div class="reveal-seam" data-reveal-seam aria-hidden="true"></div>
+        <div class="engine-note" data-engine-note aria-live="polite">Preparing paper surface</div>
+      </div>
+      <div class="scroll-instruction" aria-hidden="true">
+        <span>KEEP SCROLLING</span>
+        <span class="instruction-line"></span>
+      </div>
+    </section>
+
+    <section class="continuation" aria-labelledby="continuation-title">
+      <div class="continuation-heading">
+        <p class="under-kicker"><span></span> THE NEXT CHAPTER</p>
+        <h2 id="continuation-title">What good care<br />should <em>feel like.</em></h2>
+      </div>
+      <div class="continuation-copy">
+        <p>
+          The reveal is the transition, not the destination. Once the paper clears the screen,
+          the page underneath remains real HTML: responsive, selectable, accessible and ready
+          to continue scrolling.
+        </p>
+        <a class="text-link" href="/">Return to the current clinic preview <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="continuation-rule"></div>
+      <div class="continuation-meta">
+        <span>SCROLL-DRIVEN PAPER STUDY</span>
+        <span>THREE.JS + GSAP</span>
+        <span>PROTOTYPE — NOT THE LIVE HOMEPAGE</span>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  import * as THREE from "three";
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import html2canvas from "html2canvas";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  type Side = -1 | 1;
+
+  interface PaperHalf {
+    side: Side;
+    geometry: THREE.PlaneGeometry;
+    basePositions: Float32Array;
+    front: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshPhysicalMaterial>;
+    back: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshPhysicalMaterial>;
+    texture: THREE.CanvasTexture;
+    width: number;
+    height: number;
+  }
+
+  const track = document.querySelector<HTMLElement>("[data-reveal-track]");
+  const stage = document.querySelector<HTMLElement>("[data-reveal-stage]");
+  const cover = document.querySelector<HTMLElement>("[data-cover-artwork]");
+  const canvas = document.querySelector<HTMLCanvasElement>("[data-paper-canvas]");
+  const fallbackLayer = document.querySelector<HTMLElement>("[data-fallback-pieces]");
+  const seam = document.querySelector<HTMLElement>("[data-reveal-seam]");
+  const engineNote = document.querySelector<HTMLElement>("[data-engine-note]");
+
+  if (track && stage && cover && canvas && fallbackLayer && seam && engineNote) {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const state = { progress: 0 };
+    const halves: PaperHalf[] = [];
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 3000);
+    let renderer: THREE.WebGLRenderer | null = null;
+    let activeMode: "pending" | "webgl" | "fallback" | "reduced" = "pending";
+    let viewportWidth = 1;
+    let viewportHeight = 1;
+    let captureVersion = 0;
+    let resizeCall: ReturnType<typeof gsap.delayedCall> | null = null;
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    keyLight.position.set(-420, 520, 680);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.15), keyLight);
+    const fillLight = new THREE.DirectionalLight(0xc3ddf7, 0.52);
+    fillLight.position.set(540, -160, 420);
+    scene.add(fillLight);
+
+    const setNote = (message: string) => { engineNote.textContent = message; };
+
+    const clearHalfMeshes = () => {
+      for (const half of halves) {
+        scene.remove(half.front, half.back);
+        half.geometry.dispose();
+        half.front.material.dispose();
+        half.back.material.dispose();
+        half.texture.dispose();
+      }
+      halves.length = 0;
+    };
+
+    const makeHalfCanvas = (source: HTMLCanvasElement, side: Side): HTMLCanvasElement => {
+      const split = Math.floor(source.width / 2);
+      const result = document.createElement("canvas");
+      result.width = side < 0 ? split : source.width - split;
+      result.height = source.height;
+      const context = result.getContext("2d");
+      if (!context) throw new Error("Canvas 2D context is unavailable.");
+      const sourceX = side < 0 ? 0 : split;
+      context.drawImage(source, sourceX, 0, result.width, result.height, 0, 0, result.width, result.height);
+      return result;
+    };
+
+    const makeHalf = (side: Side, textureCanvas: HTMLCanvasElement) => {
+      const halfWidth = viewportWidth / 2;
+      const geometry = new THREE.PlaneGeometry(halfWidth, viewportHeight, 42, 34);
+      const positions = geometry.attributes.position;
+      const basePositions = Float32Array.from(positions.array as ArrayLike<number>);
+      const texture = new THREE.CanvasTexture(textureCanvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = Math.min(renderer?.capabilities.getMaxAnisotropy() ?? 1, 4);
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
+
+      const frontMaterial = new THREE.MeshPhysicalMaterial({
+        map: texture,
+        roughness: 0.87,
+        metalness: 0,
+        clearcoat: 0.025,
+        clearcoatRoughness: 0.9,
+        side: THREE.FrontSide,
+      });
+      const backMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xdce5ee,
+        roughness: 0.96,
+        metalness: 0,
+        side: THREE.BackSide,
+      });
+      const front = new THREE.Mesh(geometry, frontMaterial);
+      const back = new THREE.Mesh(geometry, backMaterial);
+      front.frustumCulled = false;
+      back.frustumCulled = false;
+      front.renderOrder = 2;
+      back.renderOrder = 1;
+      scene.add(back, front);
+
+      const half: PaperHalf = {
+        side, geometry, basePositions, front, back, texture,
+        width: halfWidth, height: viewportHeight,
+      };
+      halves.push(half);
+      return half;
+    };
+
+    const mapCurl = (distance: number, halfWidth: number, progress: number) => {
+      if (progress <= 0 || distance <= 0) return { x: distance, z: 0 };
+      const segments = Math.max(5, Math.ceil((distance / halfWidth) * 22));
+      const step = distance / segments;
+      let mappedX = 0;
+      let mappedZ = 0;
+      for (let index = 0; index < segments; index += 1) {
+        const q = (index + 0.5) * step;
+        const theta = 1.12 * progress * Math.pow(Math.max(0, 1 - q / halfWidth), 1.42);
+        mappedX += Math.cos(theta) * step;
+        mappedZ += Math.sin(theta) * step;
+      }
+      return { x: mappedX, z: mappedZ };
+    };
+
+    const updateHalf = (half: PaperHalf, progress: number) => {
+      const position = half.geometry.attributes.position as THREE.BufferAttribute;
+      const vertices = position.array as Float32Array;
+      const segmentCount = half.geometry.parameters.widthSegments;
+      const halfWidth = half.width;
+      const height = half.height;
+      const columnMap: Array<{ x: number; z: number }> = [];
+
+      for (let column = 0; column <= segmentCount; column += 1) {
+        columnMap[column] = mapCurl(column / segmentCount * halfWidth, halfWidth, progress);
+      }
+
+      for (let vertex = 0; vertex < position.count; vertex += 1) {
+        const offset = vertex * 3;
+        const baseX = half.basePositions[offset];
+        const baseY = half.basePositions[offset + 1];
+        const columnT = half.side < 0
+          ? (halfWidth / 2 - baseX) / halfWidth
+          : (baseX + halfWidth / 2) / halfWidth;
+        const column = Math.max(0, Math.min(segmentCount, Math.round(columnT * segmentCount)));
+        const mapped = columnMap[column];
+        const localX = half.side < 0 ? halfWidth / 2 - mapped.x : -halfWidth / 2 + mapped.x;
+        const vertical = Math.min(1, Math.max(0, (baseY + height / 2) / height));
+        const edgeWeight = Math.sin(vertical * Math.PI);
+        const smallRipple = Math.sin(vertical * Math.PI * 4 + columnT * 2.4) *
+          progress * edgeWeight * 2.2;
+        vertices[offset] = localX;
+        vertices[offset + 1] = baseY + smallRipple;
+        vertices[offset + 2] = mapped.z * 0.88;
+      }
+
+      position.needsUpdate = true;
+      half.geometry.computeVertexNormals();
+      half.geometry.computeBoundingSphere();
+      const reveal = Math.pow(progress, 1.12);
+      half.front.position.set(
+        half.side * half.width / 2 + half.side * viewportWidth * 0.755 * reveal,
+        0,
+        progress * 8,
+      );
+      half.back.position.copy(half.front.position);
+      half.front.rotation.set(0, -half.side * progress * 0.58, 0);
+      half.back.rotation.copy(half.front.rotation);
+    };
+
+    const renderProgress = (rawProgress: number) => {
+      state.progress = Math.max(0, Math.min(1, rawProgress));
+      const progress = state.progress;
+      seam.style.opacity = String(Math.min(0.95, progress * 5.2));
+      seam.style.transform = "translateX(-50%) scaleX(" + Math.max(0.3, 1 - progress * 0.62) + ")";
+      if (activeMode === "webgl" && renderer) {
+        for (const half of halves) updateHalf(half, progress);
+        renderer.render(scene, camera);
+      } else if (activeMode === "fallback") {
+        const pieces = Array.from(fallbackLayer.querySelectorAll<HTMLElement>(".fallback-piece"));
+        for (const piece of pieces) {
+          const side: Side = piece.dataset.side === "left" ? -1 : 1;
+          const travel = side * viewportWidth * 0.755 * Math.pow(progress, 1.12);
+          piece.style.transform = "translate3d(" + travel + "px, 0, 0) rotateY(" + (-side * progress * 0.58) + "rad)";
+          piece.style.opacity = progress >= 0.999 ? "0" : "1";
+          piece.style.filter = "drop-shadow(" + (side * -3) + "px 10px 12px rgba(3, 18, 37, " + (0.28 * (1 - progress * 0.35)) + "))";
+        }
+      }
+    };
+
+    const activateFallback = () => {
+      activeMode = "fallback";
+      clearHalfMeshes();
+      if (renderer) {
+        renderer.setClearColor(0x000000, 0);
+        renderer.clear();
+        canvas.style.opacity = "0";
+      }
+      fallbackLayer.replaceChildren();
+
+      for (const side of [-1, 1] as Side[]) {
+        const piece = document.createElement("div");
+        piece.className = "fallback-piece " + (side < 0 ? "fallback-piece--left" : "fallback-piece--right");
+        piece.dataset.side = side < 0 ? "left" : "right";
+        const clone = cover.cloneNode(true) as HTMLElement;
+        clone.removeAttribute("data-cover-artwork");
+        clone.removeAttribute("aria-labelledby");
+        clone.setAttribute("aria-hidden", "true");
+        clone.classList.add("cover-artwork--clone");
+        clone.style.position = "absolute";
+        clone.style.inset = "0 auto auto 0";
+        clone.style.width = viewportWidth + "px";
+        clone.style.height = viewportHeight + "px";
+        clone.style.opacity = "1";
+        clone.style.visibility = "visible";
+        if (side > 0) clone.style.left = (-viewportWidth / 2) + "px";
+        piece.append(clone);
+        fallbackLayer.append(piece);
+      }
+      cover.style.opacity = "0";
+      fallbackLayer.style.opacity = "1";
+      setNote("CSS paper fallback");
+      renderProgress(state.progress);
+    };
+
+    const resizeRenderer = () => {
+      viewportWidth = Math.max(1, stage.clientWidth);
+      viewportHeight = Math.max(1, stage.clientHeight);
+      camera.left = -viewportWidth / 2;
+      camera.right = viewportWidth / 2;
+      camera.top = viewportHeight / 2;
+      camera.bottom = -viewportHeight / 2;
+      camera.updateProjectionMatrix();
+      if (renderer) {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
+        renderer.setSize(viewportWidth, viewportHeight, false);
+      }
+      keyLight.position.set(-viewportWidth * 0.34, viewportHeight * 0.28, 680);
+      fillLight.position.set(viewportWidth * 0.42, -viewportHeight * 0.22, 420);
+      if (activeMode === "fallback") {
+        for (const piece of Array.from(fallbackLayer.querySelectorAll<HTMLElement>(".fallback-piece"))) {
+          piece.style.width = (viewportWidth / 2) + "px";
+          piece.style.height = viewportHeight + "px";
+          const clone = piece.firstElementChild as HTMLElement | null;
+          if (clone) {
+            clone.style.width = viewportWidth + "px";
+            clone.style.height = viewportHeight + "px";
+            clone.style.left = piece.dataset.side === "right" ? (-viewportWidth / 2) + "px" : "0";
+          }
+        }
+        renderProgress(state.progress);
+      }
+    };
+
+    const captureCover = async () => {
+      const version = ++captureVersion;
+      viewportWidth = Math.max(1, stage.clientWidth);
+      viewportHeight = Math.max(1, stage.clientHeight);
+      resizeRenderer();
+
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.6);
+      const snapshot = await html2canvas(cover, {
+        backgroundColor: null,
+        scale: ratio,
+        useCORS: false,
+        allowTaint: false,
+        logging: false,
+        width: viewportWidth,
+        height: viewportHeight,
+        onclone: (clonedDocument) => {
+          const clonedCover = clonedDocument.querySelector<HTMLElement>("[data-cover-artwork]");
+          if (clonedCover) {
+            clonedCover.style.opacity = "1";
+            clonedCover.style.visibility = "visible";
+            clonedCover.style.transform = "none";
+          }
+        },
+      });
+
+      if (version !== captureVersion) return;
+      clearHalfMeshes();
+      makeHalf(-1, makeHalfCanvas(snapshot, -1));
+      makeHalf(1, makeHalfCanvas(snapshot, 1));
+      activeMode = "webgl";
+      fallbackLayer.style.opacity = "0";
+      cover.style.opacity = "0";
+      canvas.style.opacity = "1";
+      setNote("Three.js mesh · scroll-controlled");
+      renderProgress(state.progress);
+    };
+
+    if (prefersReducedMotion.matches) {
+      activeMode = "reduced";
+      track.classList.add("reduced-motion-mode");
+      cover.style.display = "none";
+      canvas.style.display = "none";
+      fallbackLayer.style.display = "none";
+      seam.style.display = "none";
+      engineNote.style.display = "none";
+    } else {
+      try {
+        renderer = new THREE.WebGLRenderer({
+          canvas,
+          alpha: true,
+          antialias: true,
+          powerPreference: "high-performance",
+          premultipliedAlpha: false,
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
+        renderer.setClearColor(0x000000, 0);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.NoToneMapping;
+        renderer.setSize(stage.clientWidth, stage.clientHeight, false);
+        canvas.addEventListener("webglcontextlost", (event) => {
+          event.preventDefault();
+          activateFallback();
+        });
+      } catch {
+        activateFallback();
+      }
+
+      const progressTween = gsap.to(state, {
+        progress: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: track,
+          start: "top top",
+          end: () => "+=" + Math.round(window.innerHeight * 1.6),
+          pin: stage,
+          scrub: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => renderProgress(self.progress),
+          onRefresh: (self) => renderProgress(self.progress),
+        },
+        onUpdate: () => renderProgress(state.progress),
+      });
+
+      if (activeMode !== "fallback" && renderer) {
+        captureCover().catch(() => activateFallback());
+      }
+      renderProgress(0);
+
+      window.addEventListener("resize", () => {
+        if (resizeCall) resizeCall.kill();
+        resizeCall = gsap.delayedCall(0.2, () => {
+          resizeRenderer();
+          if (activeMode === "webgl") captureCover().catch(() => activateFallback());
+          else ScrollTrigger.refresh();
+        });
+      }, { passive: true });
+
+      prefersReducedMotion.addEventListener("change", (event) => {
+        if (event.matches) {
+          progressTween.scrollTrigger?.kill(true);
+          progressTween.kill();
+          captureVersion += 1;
+          clearHalfMeshes();
+          renderer?.clear();
+          canvas.style.display = "none";
+          fallbackLayer.style.display = "none";
+          cover.style.display = "none";
+          seam.style.display = "none";
+          engineNote.style.display = "none";
+          track.classList.add("reduced-motion-mode");
+          activeMode = "reduced";
+          ScrollTrigger.refresh();
+        } else {
+          window.location.reload();
+        }
+      });
+    }
+  }
+</script>
+
+<style>
+  :global(html) { scroll-behavior: auto; background: #f1efe9; }
+  :global(body) { margin: 0; background: #f1efe9; color: #172735; }
+  :global(a) { color: inherit; }
+  .paper-demo { min-width: 320px; overflow: clip; background: #f1efe9; }
+  .back-link { position:absolute; z-index:20; top:22px; left:clamp(20px,4vw,48px); display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,.78); text-decoration:none; font-size:12px; letter-spacing:.03em; mix-blend-mode:difference; }
+  .back-link span { font-size:18px; line-height:1; }
+  .reveal-track { position:relative; height:260svh; background:#f1efe9; }
+  .reveal-stage { position:relative; width:100%; height:100svh; min-height:520px; overflow:hidden; isolation:isolate; perspective:1600px; background:#f1efe9; transform-style:preserve-3d; }
+  .under-page { position:absolute; z-index:1; inset:0; display:flex; flex-direction:column; justify-content:space-between; padding:clamp(24px,4.8vw,70px) clamp(24px,7.4vw,112px) clamp(20px,3vw,42px); overflow:hidden; background:radial-gradient(ellipse at 83% 20%,rgba(185,202,211,.23),transparent 36%),#f1efe9; color:#172735; }
+  .under-topline, .under-footer { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+  .under-brand { display:inline-flex; align-items:center; gap:10px; text-decoration:none; font-size:10px; font-weight:750; letter-spacing:.18em; }
+  .brand-mark { display:grid; place-items:center; width:24px; height:24px; border:1px solid #aeb8b6; border-radius:50%; color:#557e77; font-size:21px; font-weight:300; line-height:1; }
+  .under-label, .under-footer { color:#68777c; font-size:9px; font-weight:650; letter-spacing:.16em; }
+  .under-content { width:100%; max-width:1120px; margin:auto; padding:30px 0 38px; }
+  .under-kicker { display:flex; align-items:center; gap:10px; margin:0 0 25px; color:#70807f; font-size:10px; font-weight:750; letter-spacing:.19em; }
+  .under-kicker span { display:inline-block; width:27px; height:1px; background:#73928d; }
+  .under-content h1, .continuation-heading h2 { max-width:1000px; margin:0; font-size:clamp(3.2rem,8.4vw,8.1rem); font-weight:490; line-height:.91; letter-spacing:-.073em; }
+  .under-content h1 em, .continuation-heading h2 em { color:#6d938b; font-family:Georgia,"Times New Roman",serif; font-weight:400; }
+  .under-lead { max-width:520px; margin:26px 0 0; color:#56656b; font-size:clamp(14px,1.45vw,18px); line-height:1.7; }
+  .under-details { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(16px,3.2vw,46px); margin-top:clamp(24px,4.4vh,48px); border-top:1px solid #d8d9d1; }
+  .under-details > div { padding-top:14px; }
+  .detail-index { color:#81958f; font-size:10px; letter-spacing:.15em; }
+  .under-details h2 { margin:10px 0 7px; font-size:clamp(14px,1.45vw,18px); font-weight:650; letter-spacing:-.025em; }
+  .under-details p { max-width:230px; margin:0; color:#6b7778; font-size:12px; line-height:1.55; }
+  .cover-artwork { position:absolute; z-index:2; inset:0; display:flex; flex-direction:column; justify-content:space-between; padding:clamp(24px,4.8vw,70px) clamp(24px,7.4vw,112px) clamp(22px,3.2vw,44px); overflow:hidden; color:#f4f7fb; background:radial-gradient(ellipse at 79% 48%,rgba(89,150,203,.36),transparent 34%),radial-gradient(ellipse at 15% 100%,rgba(7,24,48,.46),transparent 44%),linear-gradient(125deg,#183b63 0%,#205183 48%,#17395d 100%); transition:opacity .12s linear; backface-visibility:hidden; }
+  .cover-orbit { position:absolute; z-index:0; border:1px solid rgba(200,229,249,.17); border-radius:50%; pointer-events:none; }
+  .cover-orbit--one { width:min(86vw,1100px); aspect-ratio:1; right:-22%; top:-36%; transform:rotate(-22deg); }
+  .cover-orbit--two { width:min(62vw,780px); aspect-ratio:1; right:-10%; top:-18%; border-color:rgba(200,229,249,.12); }
+  .cover-shine { position:absolute; inset:0; pointer-events:none; opacity:.34; background:linear-gradient(112deg,transparent 28%,rgba(226,241,255,.055) 47%,transparent 62%); }
+  .cover-masthead { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+  .cover-brand { display:inline-flex; align-items:center; gap:12px; color:#f3f7fa; text-decoration:none; font-size:10px; font-weight:760; letter-spacing:.19em; }
+  .cover-mark { position:relative; display:inline-block; width:25px; height:25px; border:1px solid rgba(230,243,251,.8); border-radius:50%; }
+  .cover-mark span:first-child { position:absolute; left:11px; top:4px; bottom:4px; width:1px; background:#e9f1f8; }
+  .cover-mark span:last-child { position:absolute; top:11px; left:4px; right:4px; height:1px; background:#e9f1f8; }
+  .cover-edition { color:rgba(232,243,250,.63); font-size:9px; font-weight:650; letter-spacing:.16em; }
+  .cover-edition span { padding:0 5px; color:#bedbef; }
+  .cover-copy { position:relative; z-index:1; width:min(74%,840px); margin:auto 0; padding:28px 0 48px; }
+  .cover-eyebrow { display:flex; align-items:center; gap:10px; margin:0 0 clamp(20px,3.2vh,35px); color:#c5deef; font-size:10px; font-weight:750; letter-spacing:.2em; }
+  .cover-eyebrow span { width:27px; height:1px; background:#a9cee8; }
+  .cover-copy h2 { margin:0; font-size:clamp(3.2rem,9.1vw,9rem); font-weight:480; line-height:.86; letter-spacing:-.078em; }
+  .cover-copy h2 em { color:#b9d9f1; font-family:Georgia,"Times New Roman",serif; font-weight:400; }
+  .cover-description { max-width:410px; margin:clamp(20px,3.4vh,36px) 0 0; color:rgba(235,244,251,.76); font-size:clamp(13px,1.4vw,17px); line-height:1.68; }
+  .cover-illustration { position:absolute; z-index:0; width:min(31vw,410px); aspect-ratio:1; right:clamp(16px,8vw,120px); top:50%; transform:translateY(-49%); border-radius:50%; pointer-events:none; }
+  .illustration-ring { position:absolute; inset:0; border:1px solid rgba(189,222,245,.33); border-radius:50%; }
+  .illustration-ring--inner { inset:15%; border-color:rgba(189,222,245,.42); }
+  .illustration-core { position:absolute; inset:34%; border-radius:50%; background:radial-gradient(circle at 35% 28%,rgba(235,246,255,.75),rgba(140,190,226,.22) 38%,rgba(16,48,81,.05) 71%); border:1px solid rgba(220,239,252,.62); box-shadow:0 0 60px rgba(143,197,237,.18),inset 0 0 25px rgba(218,238,252,.14); }
+  .illustration-point { position:absolute; width:7px; height:7px; border-radius:50%; background:#cee6f7; box-shadow:0 0 17px rgba(208,235,252,.65); }
+  .illustration-point--a { left:17%; top:25%; }
+  .illustration-point--b { right:13%; bottom:26%; width:5px; height:5px; }
+  .cover-footer { position:relative; z-index:1; display:flex; align-items:flex-end; justify-content:space-between; gap:20px; }
+  .cover-index { display:flex; align-items:center; gap:8px; color:rgba(229,241,249,.56); font-size:9px; letter-spacing:.14em; }
+  .cover-index strong { color:#f2f7fb; font-size:15px; font-weight:600; letter-spacing:-.02em; }
+  .scroll-cue { display:flex; align-items:center; gap:12px; color:rgba(236,245,251,.8); font-size:9px; font-weight:700; letter-spacing:.16em; }
+  .scroll-arrow { display:grid; place-items:center; width:32px; height:32px; border:1px solid rgba(234,244,251,.4); border-radius:50%; color:#f4f8fc; font-size:15px; }
+  .paper-canvas { position:absolute; z-index:4; inset:0; display:block; width:100%; height:100%; opacity:0; pointer-events:none; filter:drop-shadow(0 10px 12px rgba(3,16,32,.32)); transition:opacity .12s linear; }
+  .fallback-pieces { position:absolute; z-index:4; inset:0; opacity:0; pointer-events:none; perspective:1600px; }
+  .fallback-piece { position:absolute; top:0; width:50%; height:100%; overflow:hidden; transform-style:preserve-3d; backface-visibility:visible; }
+  .fallback-piece--left { left:0; transform-origin:100% 50%; }
+  .fallback-piece--right { right:0; transform-origin:0 50%; }
+  .fallback-piece::after { content:""; position:absolute; top:0; bottom:0; width:2px; background:linear-gradient(90deg,rgba(255,255,255,.38),rgba(2,20,39,.32)); opacity:0; }
+  .fallback-piece--left::after { right:0; }
+  .fallback-piece--right::after { left:0; }
+  .cover-artwork--clone { max-width:none !important; }
+  .reveal-seam { position:absolute; z-index:5; top:0; bottom:0; left:50%; width:1px; pointer-events:none; opacity:0; background:linear-gradient(180deg,transparent 2%,rgba(235,246,255,.88) 18%,rgba(7,26,48,.55) 52%,rgba(235,246,255,.68) 82%,transparent 100%); box-shadow:0 0 11px rgba(2,13,28,.28); }
+  .engine-note { position:absolute; z-index:8; left:clamp(12px,2vw,24px); bottom:12px; padding:5px 8px; border:1px solid rgba(222,237,248,.18); border-radius:3px; color:rgba(235,244,251,.58); background:rgba(10,31,52,.18); font:9px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.03em; pointer-events:none; }
+  .scroll-instruction { display:flex; align-items:center; gap:15px; position:absolute; z-index:10; left:50%; bottom:clamp(22px,4vh,46px); transform:translateX(-50%); color:#74817d; font-size:9px; font-weight:700; letter-spacing:.18em; pointer-events:none; }
+  .instruction-line { display:inline-block; width:50px; height:1px; background:#aab5ae; }
+  .continuation { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr); column-gap:clamp(30px,8vw,120px); align-items:end; padding:clamp(72px,11vw,156px) clamp(24px,10vw,150px) 44px; background:#f1efe9; color:#172735; }
+  .continuation-heading h2 { font-size:clamp(3rem,7vw,6.7rem); }
+  .continuation-copy { max-width:480px; padding-bottom:8px; }
+  .continuation-copy p { margin:0 0 28px; color:#5c6b70; font-size:16px; line-height:1.8; }
+  .text-link { display:inline-flex; align-items:center; gap:12px; padding-bottom:8px; border-bottom:1px solid #9baaa5; text-decoration:none; font-size:12px; font-weight:650; }
+  .text-link span { font-size:16px; }
+  .continuation-rule { grid-column:1/-1; height:1px; margin-top:clamp(72px,10vw,140px); background:#d4d7ce; }
+  .continuation-meta { grid-column:1/-1; display:flex; justify-content:space-between; gap:16px; margin-top:18px; color:#7a8584; font-size:9px; font-weight:650; letter-spacing:.13em; }
+
+  @media (max-width:680px) {
+    .back-link { top:18px; left:20px; font-size:11px; }
+    .reveal-stage { min-height:540px; }
+    .under-page { padding:24px 24px 20px; }
+    .under-label { max-width:118px; text-align:right; line-height:1.5; }
+    .under-content { padding:25px 0; }
+    .under-content h1 { font-size:clamp(3rem,12.5vw,5.1rem); }
+    .under-lead { max-width:340px; margin-top:18px; font-size:13px; line-height:1.62; }
+    .under-details { gap:10px; margin-top:24px; }
+    .under-details > div { padding-top:10px; }
+    .under-details h2 { font-size:12px; line-height:1.2; }
+    .under-details p { font-size:10px; line-height:1.5; }
+    .under-footer { font-size:8px; }
+    .cover-artwork { padding:24px 24px 22px; }
+    .cover-masthead { align-items:flex-start; }
+    .cover-brand { font-size:9px; gap:9px; }
+    .cover-edition { max-width:125px; text-align:right; font-size:8px; line-height:1.6; }
+    .cover-copy { width:100%; padding:34px 0 58px; }
+    .cover-eyebrow { font-size:9px; letter-spacing:.16em; margin-bottom:24px; }
+    .cover-copy h2 { position:relative; z-index:1; font-size:clamp(3.15rem,12.6vw,5rem); }
+    .cover-description { position:relative; z-index:1; max-width:265px; margin-top:22px; font-size:12px; }
+    .cover-illustration { width:66vw; max-width:310px; right:-24%; top:51%; opacity:.53; }
+    .cover-footer { align-items:flex-end; }
+    .cover-index { font-size:7px; gap:5px; letter-spacing:.08em; }
+    .cover-index strong { font-size:13px; }
+    .scroll-cue { gap:8px; max-width:135px; font-size:7px; line-height:1.5; letter-spacing:.1em; }
+    .scroll-arrow { width:28px; height:28px; flex:none; }
+    .engine-note { max-width:62%; font-size:8px; }
+    .scroll-instruction { bottom:18px; font-size:8px; }
+    .continuation { grid-template-columns:1fr; row-gap:26px; padding:80px 24px 28px; }
+    .continuation-heading h2 { font-size:clamp(3rem,12vw,4.6rem); }
+    .continuation-copy p { font-size:14px; }
+    .continuation-rule { margin-top:45px; }
+    .continuation-meta { flex-direction:column; gap:8px; font-size:8px; }
+  }
+
+  @media (max-height:650px) and (min-width:681px) {
+    .cover-copy { padding:14px 0 20px; }
+    .cover-copy h2 { font-size:clamp(3rem,8vw,6.6rem); }
+    .cover-description { margin-top:17px; }
+    .under-content { padding:15px 0 20px; }
+    .under-content h1 { font-size:clamp(3rem,7vw,6rem); }
+    .under-lead { margin-top:16px; }
+    .under-details { margin-top:20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-track { height:auto; }
+    .reveal-stage { height:auto; min-height:100svh; }
+    .cover-artwork, .paper-canvas, .fallback-pieces, .reveal-seam, .engine-note, .scroll-instruction { display:none !important; }
+    .under-page { position:relative; min-height:100svh; }
+  }
+</style>
