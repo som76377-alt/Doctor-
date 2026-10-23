@@ -472,7 +472,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         onUpdate: () => renderProgress(state.progress),
       });
 
-      if (activeMode !== "fallback" && renderer) {
+      if (renderer) {
         captureCover().catch(() => activateFallback());
       }
       renderProgress(0);
