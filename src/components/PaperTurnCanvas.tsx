@@ -191,7 +191,7 @@ export default function PaperTurnCanvas() {
         ? snapshotRef.current.height / Math.max(1, snapshotRef.current.width)
         : 1.4;
       const viewHeight = viewportHeight / viewportWidth;
-      const pageCenterY = viewHeight / 2 - pageHeight / 2 - scrollY / viewportWidth;
+      const pageCenterY = viewHeight / 2 - pageHeight / 2 + scrollY / viewportWidth;
 
       const leftGroup = leftRef.current?.mesh?.parent;
       const rightGroup = rightRef.current?.mesh?.parent;
