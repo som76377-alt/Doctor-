@@ -136,35 +136,43 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       const sourcePage = document.querySelector(".page-shell");
       const hero = sourcePage?.querySelector(".hero");
       const approach = sourcePage?.querySelector(".approach");
-      if (!stage || !sourcePage || !hero || !approach || stage.dataset.ready === "true") return;
+      const doctor = sourcePage?.querySelector(".doctor-feature");
+      const contact = sourcePage?.querySelector(".contact");
+      if (!stage || !sourcePage || !hero || !approach || !doctor || !contact || stage.dataset.ready === "true") return;
 
       const leftFlap = stage.querySelector(".paper-flap-left");
       const rightFlap = stage.querySelector(".paper-flap-right");
-      if (!leftFlap || !rightFlap) return;
+      const underpage = stage.querySelector(".paper-underpage");
+      if (!leftFlap || !rightFlap || !underpage) return;
 
-      // Only the top sheet is copied: doctor/contact remain normal content after it.
-      const makeTopPageCopy = (host, side) => {
+      const cloneSection = (section) => {
+        const clone = section.cloneNode(true);
+        clone.removeAttribute("id");
+        clone.setAttribute("aria-hidden", "true");
+        clone.setAttribute("inert", "");
+        clone.querySelectorAll("[id]").forEach(node => node.removeAttribute("id"));
+        clone.querySelectorAll("script, iframe, video, audio, form").forEach(node => node.remove());
+        clone.querySelectorAll("a, button, input, select, textarea, [tabindex]").forEach(node => {
+          node.setAttribute("tabindex", "-1");
+        });
+        return clone;
+      };
+
+      const makeCopy = (host, className, sections) => {
         const copy = document.createElement("div");
-        copy.className = "paper-copy";
-        copy.dataset.paperRole = side;
+        copy.className = className;
         copy.setAttribute("aria-hidden", "true");
         copy.setAttribute("inert", "");
-        [hero, approach].forEach(section => {
-          const clone = section.cloneNode(true);
-          clone.removeAttribute("id");
-          clone.querySelectorAll("[id]").forEach(node => node.removeAttribute("id"));
-          clone.querySelectorAll("script, iframe, video, audio, form").forEach(node => node.remove());
-          clone.querySelectorAll("a, button, input, select, textarea, [tabindex]").forEach(node => {
-            node.setAttribute("tabindex", "-1");
-          });
-          copy.appendChild(clone);
-        });
+        sections.forEach(section => copy.appendChild(cloneSection(section)));
         host.appendChild(copy);
         return copy;
       };
 
-      const leftCopy = makeTopPageCopy(leftFlap, "left");
-      const rightCopy = makeTopPageCopy(rightFlap, "right");
+      // The top sheet contains only the hero and approach; the unfurled back page is the doctor/contact design.
+      const leftCopy = makeCopy(leftFlap, "paper-copy", [hero, approach]);
+      const rightCopy = makeCopy(rightFlap, "paper-copy", [hero, approach]);
+      const backCopy = makeCopy(underpage, "paper-underpage-copy", [doctor, contact]);
+
       if (stage.parentElement !== document.body) document.body.appendChild(stage);
       stage.dataset.ready = "true";
 
@@ -172,7 +180,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       let latestY = window.scrollY;
       let viewportHeight = window.innerHeight;
       let viewportWidth = window.innerWidth;
-      let sheetEnd = Math.max(1, approach.getBoundingClientRect().bottom + window.scrollY);
+      let sheetEnd = 1;
 
       const measure = () => {
         viewportHeight = window.innerHeight;
@@ -182,21 +190,23 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       const draw = () => {
         frame = 0;
-        const pageProgress = Math.min(1, Math.max(0, latestY / sheetEnd));
-        const syringeY = 18 + pageProgress * Math.max(0, viewportHeight - 168);
+        const progress = Math.min(1, Math.max(0, latestY / sheetEnd));
+        const syringeY = 18 + progress * Math.max(0, viewportHeight - 168);
         const tearHeight = Math.min(viewportHeight, syringeY + 150);
-        const rawFold = Math.min(1, Math.max(0, (pageProgress - 0.025) / 0.90));
+        const tearBottom = Math.max(0, viewportHeight - tearHeight);
+
+        // Rotate back around the centre seam. No lateral translation: the opening comes from the fold.
+        const rawFold = Math.min(1, Math.max(0, (progress - 0.015) / 0.96));
         const foldProgress = rawFold * rawFold * (3 - 2 * rawFold);
-        const foldAngle = foldProgress * (viewportWidth <= 650 ? 58 : 62);
-        const foldSeparation = foldProgress * (viewportWidth <= 650 ? 12 : 20);
-        const foldLift = foldProgress * 16;
+        const foldAngle = foldProgress * (viewportWidth <= 650 ? 87 : 88);
+        const curl = foldProgress * 2.5;
 
         stage.style.setProperty("--injection-y", syringeY.toFixed(1) + "px");
-        stage.style.setProperty("--tear-height", tearHeight.toFixed(1) + "px");
+        stage.style.setProperty("--tear-bottom", tearBottom.toFixed(1) + "px");
         stage.style.setProperty("--fold-angle", foldAngle.toFixed(2) + "deg");
-        stage.style.setProperty("--fold-separation", foldSeparation.toFixed(1) + "px");
-        stage.style.setProperty("--fold-lift", foldLift.toFixed(1) + "px");
+        stage.style.setProperty("--fold-curl", curl.toFixed(2) + "deg");
 
+        // Follow only the live scroll position. DOM measurements are cached until resize.
         const pageOffset = -latestY;
         leftCopy.style.transform = "translate3d(0," + pageOffset.toFixed(1) + "px,0)";
         rightCopy.style.transform = "translate3d(0," + pageOffset.toFixed(1) + "px,0)";
@@ -217,6 +227,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       measure();
       draw();
     };
+
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", setupInjection, { once: true });
     } else {
@@ -273,32 +284,52 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     pointer-events: none;
     opacity: 0;
     isolation: isolate;
-    perspective: 1000px;
-    perspective-origin: 50% 44%;
+    perspective: 1200px;
+    perspective-origin: 50% 48%;
     transform-style: preserve-3d;
     transition: opacity .12s linear;
-    background: #fff;
     --injection-y: 18px;
-    --tear-height: 168px;
+    --tear-bottom: calc(100dvh - 168px);
     --fold-angle: 0deg;
-    --fold-separation: 0px;
-    --fold-lift: 0px;
-    --paper-edge: 9px;
+    --fold-curl: 0deg;
+    --paper-edge: 8px;
   }
   .injection-stage.is-active { opacity: 1; }
+
+  /* Only the already-torn region is covered by the second page. */
   .paper-underpage {
     position: absolute;
     z-index: 0;
     inset: 0;
-    background: #fff;
+    overflow: hidden;
+    clip-path: inset(0 0 var(--tear-bottom) 0);
+    background: #efeee9;
+    contain: paint;
   }
+  .paper-underpage-copy {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    margin: 0;
+    pointer-events: none;
+    background: #efeee9;
+  }
+  .paper-underpage-copy > .doctor-feature,
+  .paper-underpage-copy > .contact {
+    width: 100%;
+    max-width: none;
+  }
+
   .paper-flap {
     position: absolute;
     z-index: 3;
     top: 0;
     width: 50vw;
-    height: var(--tear-height);
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
+    clip-path: inset(0 0 var(--tear-bottom) 0);
     background: #efeee9;
     transform-style: preserve-3d;
     backface-visibility: hidden;
@@ -308,24 +339,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .paper-flap-left {
     left: 0;
     transform-origin: 100% 50%;
-    transform: translate3d(calc(0px - var(--fold-separation)), 0, var(--fold-lift)) rotateY(var(--fold-angle));
-    clip-path: polygon(
-      0 0, 100% 0, 98.2% 4%, 99.7% 10%, 94.6% 15%,
-      98.7% 23%, 95.1% 31%, 100% 37%, 92.8% 45%,
-      97.4% 54%, 91.6% 61%, 96.5% 68%, 93.8% 77%,
-      99.5% 84%, 94.4% 92%, 97.6% 97%, 99.3% 100%, 0 100%
-    );
+    transform: rotateY(calc(0deg - var(--fold-angle))) rotateX(calc(0deg - var(--fold-curl)));
   }
   .paper-flap-right {
     left: 50vw;
     transform-origin: 0 50%;
-    transform: translate3d(var(--fold-separation), 0, var(--fold-lift)) rotateY(calc(0deg - var(--fold-angle)));
-    clip-path: polygon(
-      0 0, 100% 0, 100% 100%, 3.5% 100%, 1% 93%,
-      5.5% 87%, 0 80%, 6.5% 73%, 3.5% 64%, 8% 56%,
-      2.5% 49%, 6.5% 42%, 0 34%, 4% 28%, 1.5% 20%,
-      4.5% 13%, 0 8%, 2% 3%
-    );
+    transform: rotateY(var(--fold-angle)) rotateX(var(--fold-curl));
   }
   .paper-copy {
     position: absolute;
@@ -336,6 +355,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     background: #efeee9;
     pointer-events: none;
     will-change: transform;
+    backface-visibility: hidden;
   }
   .paper-copy > .hero,
   .paper-copy > .approach {
@@ -345,6 +365,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .paper-flap-right .paper-copy { left: -50vw; }
   .paper-copy a,
   .paper-copy button { pointer-events: none !important; }
+
+  /* Thin paper edge, soft curl highlight and a narrow centre incision — no jagged zipper teeth. */
   .paper-flap::before,
   .paper-flap::after {
     content: "";
@@ -357,29 +379,31 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .paper-flap-left::before {
     right: 0;
     width: var(--paper-edge);
-    background: linear-gradient(90deg, rgba(255,255,255,.05), rgba(178,164,143,.42) 42%, rgba(67,56,42,.28));
-    box-shadow: 1px 0 2px rgba(255,255,255,.8) inset;
+    background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(177,164,143,.28) 50%, rgba(54,45,34,.30));
+    box-shadow: 1px 0 1px rgba(255,255,255,.78) inset;
   }
   .paper-flap-right::before {
     left: 0;
     width: var(--paper-edge);
-    background: linear-gradient(90deg, rgba(67,56,42,.28), rgba(178,164,143,.42) 58%, rgba(255,255,255,.05));
-    box-shadow: -1px 0 2px rgba(255,255,255,.8) inset;
+    background: linear-gradient(90deg, rgba(54,45,34,.30), rgba(177,164,143,.28) 50%, rgba(255,255,255,.04));
+    box-shadow: -1px 0 1px rgba(255,255,255,.78) inset;
   }
   .paper-flap::after {
     inset: 0;
-    opacity: .55;
-    background: linear-gradient(180deg, rgba(255,255,255,.11), transparent 28%, rgba(100,85,64,.045) 100%);
+    opacity: .5;
+    background: linear-gradient(180deg, rgba(255,255,255,.09), transparent 28%, rgba(100,85,64,.045) 100%);
   }
   .paper-tear-shadow {
     position: absolute;
     z-index: 2;
     top: 0;
     left: 50vw;
-    width: 12px;
-    height: var(--tear-height);
+    width: 8px;
+    height: 100vh;
+    height: 100dvh;
+    clip-path: inset(0 0 var(--tear-bottom) 0);
     transform: translateX(-50%);
-    background: linear-gradient(90deg, rgba(30,25,18,.20), rgba(30,25,18,.07) 28%, transparent 50%, rgba(30,25,18,.07) 72%, rgba(30,25,18,.20));
+    background: linear-gradient(90deg, rgba(28,23,17,.24), rgba(28,23,17,.06) 35%, transparent 50%, rgba(28,23,17,.06) 65%, rgba(28,23,17,.24));
   }
   .injection-syringe {
     position: absolute;
@@ -402,7 +426,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     vector-effect: non-scaling-stroke;
   }
   @media (max-width: 650px) {
-    .injection-stage { perspective: 900px; --paper-edge: 7px; }
+    .injection-stage { perspective: 950px; --paper-edge: 6px; }
     .injection-syringe { width: 50px; height: 150px; }
   }
   @media (prefers-reduced-motion: reduce) {
