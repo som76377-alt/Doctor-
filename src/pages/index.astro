@@ -47,19 +47,19 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
     <section class="approach" id="approach">
       <div class="scalpel-stage" aria-hidden="true">
-        <svg class="scalpel-drawing" viewBox="0 0 480 190" role="presentation" focusable="false">
-          <path class="scalpel-cut-line" d="M18 158 C77 158 119 157 146 151 Q157 148 156 152" />
-          <path class="scalpel-cut-line" d="M184 156 Q209 163 247 160 T462 158" />
+        <svg class="scalpel-drawing" viewBox="0 0 240 320" role="presentation" focusable="false">
+          <!-- A foreshortened, top-down tool: the broad handle is nearest the viewer; the blade points into the page. -->
+          <path class="scalpel-cut" d="M120 0 L120 320" pathLength="1" />
           <g class="scalpel-motion">
-            <path class="scalpel-outline" d="M166 151 L194 123 Q198 119 202 123 L213 132 Q216 136 211 141 L184 157" />
-            <path class="scalpel-detail" d="M174 148 L195 128 Q198 125 200 128" />
-            <path class="scalpel-outline" d="M201 124 L279 47 L324 11 Q334 3 343 12 Q352 21 343 30 L301 71 L213 134" />
-            <path class="scalpel-detail" d="M218 119 L292 46" />
-            <path class="scalpel-grip" d="M235 108 L245 117 M243 100 L253 109 M251 92 L261 101 M259 84 L269 93 M267 76 L277 85 M275 68 L285 77 M283 60 L293 69" />
+            <path class="scalpel-outline" d="M91 42 Q89 28 102 19 L112 11 Q120 5 128 11 L138 19 Q151 28 149 42 L139 92 L130 158 L127 199 L120 222 L113 199 L110 158 L101 92 Z" />
+            <path class="scalpel-detail" d="M103 38 Q120 28 137 38 M105 50 Q120 42 135 50" />
+            <path class="scalpel-outline" d="M110 158 L103 209 L114 248 L120 269 L126 248 L137 209 L130 158" />
+            <path class="scalpel-outline" d="M114 247 L120 302 L126 247" />
+            <path class="scalpel-detail" d="M114 249 L120 302 L126 249" />
+            <path class="scalpel-grip" d="M105 68 L135 68 M104 79 L136 79 M103 90 L137 90 M102 101 L138 101 M104 112 L136 112 M107 123 L133 123" />
           </g>
         </svg>
       </div>
-      <div class="section-label"><span>01</span><span>THE APPROACH</span></div>
       <div class="approach-grid">
         <h2>Good care feels<br /><em>human.</em></h2>
         <div class="approach-copy">
@@ -125,29 +125,40 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 </BaseLayout>
 
 <script>
-  const initHeroScrollZoom = () => {
-    const hero = document.querySelector(".hero");
-    const heroPhoto = document.querySelector(".hero-photo");
-    if (!hero || !heroPhoto) return;
-
-    const updateZoom = () => {
-      // Finish the full zoom-out within the first 75% of the hero's height.
-      const travel = Math.max(hero.offsetHeight * 0.75, 1);
-      const progress = Math.min(1, Math.max(0, window.scrollY / travel));
-      const zoom = 1.42 - progress * 0.42;
-      heroPhoto.style.transform = "scale(" + zoom.toFixed(3) + ")";
+  (() => {
+    const setupScalpel = () => {
+      const stage = document.querySelector(".scalpel-stage");
+      const motion = document.querySelector(".scalpel-motion");
+      const cut = document.querySelector(".scalpel-cut");
+      if (!stage || !motion || !cut || stage.dataset.ready === "true") return;
+      stage.dataset.ready = "true";
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let frame = 0;
+      let latestY = window.scrollY;
+      const draw = () => {
+        frame = 0;
+        const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const progress = Math.min(1, Math.max(0, latestY / maxScroll));
+        // Keep the tool in the viewport like the visitor is holding it while scrolling.
+        stage.classList.toggle("is-active", latestY > 12);
+        cut.style.strokeDashoffset = String(1 - progress);
+        if (!reduced) {
+          const handSway = Math.sin(progress * Math.PI * 18) * 5;
+          const tilt = Math.sin(progress * Math.PI * 10) * 2.2;
+          motion.style.transform = "translate(" + handSway.toFixed(2) + "px, 0px) rotate(" + tilt.toFixed(2) + "deg)";
+        }
+      };
+      const onScroll = () => {
+        latestY = window.scrollY;
+        if (!frame) frame = requestAnimationFrame(draw);
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll, { passive: true });
+      draw();
     };
-
-    updateZoom();
-    window.addEventListener("scroll", updateZoom, { passive: true });
-    window.addEventListener("resize", updateZoom, { passive: true });
-  };
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initHeroScrollZoom, { once: true });
-  } else {
-    initHeroScrollZoom();
-  }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setupScalpel, { once: true });
+    else setupScalpel();
+  })();
 </script>
 
 <style>
@@ -188,31 +199,41 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .hero-index { margin: 0; color: rgba(30,44,49,.68); font-size: 8px; letter-spacing: .14em; }
   .hero-index span { color: #1e2c31; }
   .scalpel-stage {
-    position: relative;
-    z-index: 3;
-    width: min(460px, 88vw);
-    margin: -180px auto -180px;
-    transform: translateY(-220px);
+    position: fixed;
+    z-index: 8;
+    top: 50%;
+    left: 50%;
+    width: min(190px, 42vw);
+    height: min(62vh, 470px);
+    transform: translate(-50%, -46%);
     pointer-events: none;
-    color: #1e2c31;
+    color: #111;
+    opacity: 0;
+    transition: opacity .25s ease;
   }
-  .scalpel-drawing { display: block; width: 100%; height: auto; overflow: visible; }
-  .scalpel-motion { transform: translateX(0); will-change: transform; }
-  .scalpel-outline, .scalpel-detail, .scalpel-grip, .scalpel-cut-line {
+  .scalpel-stage.is-active { opacity: 1; }
+  .scalpel-drawing { display: block; width: 100%; height: 100%; overflow: visible; }
+  .scalpel-motion { transform-origin: 120px 220px; will-change: transform; }
+  .scalpel-outline, .scalpel-detail, .scalpel-grip, .scalpel-cut {
     fill: none;
     stroke: currentColor;
-    stroke-width: 3.5;
+    stroke-width: 4.5;
     stroke-linecap: round;
     stroke-linejoin: round;
     vector-effect: non-scaling-stroke;
   }
-  .scalpel-detail { stroke-width: 3.1; }
-  .scalpel-grip { stroke-width: 3.6; }
+  .scalpel-detail { stroke-width: 3.2; }
+  .scalpel-grip { stroke-width: 4; }
+  .scalpel-cut { stroke-width: 3; stroke-dasharray: 1; stroke-dashoffset: 1; }
   @media (max-width: 650px) {
-    .scalpel-stage { width: min(310px, 86vw); margin-top: -120px; margin-bottom: -120px; transform: translateY(-150px); }
-    .scalpel-outline, .scalpel-detail, .scalpel-grip, .scalpel-cut-line { stroke-width: 3.2; }
+    .scalpel-stage { width: min(140px, 38vw); height: 56vh; }
+    .scalpel-outline, .scalpel-detail, .scalpel-grip, .scalpel-cut { stroke-width: 3.8; }
   }
-  @media (prefers-reduced-motion: reduce) { .scalpel-motion { transform: none !important; } }
+  @media (prefers-reduced-motion: reduce) {
+    .scalpel-stage { transition: none; }
+    .scalpel-motion { transform: none !important; }
+  }
+
   .fabric { position: absolute; z-index: -1; right: -10%; bottom: -55px; left: -10%; height: 100px; opacity: .5; }
   .fabric span { position: absolute; left: -5%; width: 110%; height: 100px; border-top: 1px solid rgba(255,255,255,.48); border-radius: 50%; transform: rotate(-2deg); }
   .fabric span:nth-child(2) { top: 12px; opacity: .5; transform: rotate(2deg); }
