@@ -158,7 +158,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .hero-content { width: min(760px, 100%); margin: auto 0; padding: 46px clamp(24px, 10.8vw, 164px) 52px; }
   .kicker { display: flex; align-items: center; gap: 11px; margin: 0 0 25px; color: #d9d4c5; font-size: 9px; font-weight: 700; letter-spacing: .2em; }
   .kicker-line { width: 28px; height: 1px; background: #c6bfae; }
-  h1, h2 { margin: 0; font-weight: 400; letter-spacing: -.065em; }
+  h1, h2 { margin: 0; font-weight: 400; letter-spacing: -.045em; text-wrap: balance; }
   h1 { font-size: clamp(58px, 8.6vw, 116px); line-height: .94; }
   h1 em, h2 em { color: #d3c9b5; font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
   .hero-copy { max-width: 360px; margin: 21px 0 0; color: rgba(248,247,242,.88); font-size: 14px; line-height: 1.7; }
@@ -177,17 +177,17 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .fabric span { position: absolute; left: -5%; width: 110%; height: 100px; border-top: 1px solid rgba(255,255,255,.48); border-radius: 50%; transform: rotate(-2deg); }
   .fabric span:nth-child(2) { top: 12px; opacity: .5; transform: rotate(2deg); }
   .fabric span:nth-child(3) { top: 25px; opacity: .3; transform: rotate(-4deg); }
-  .approach { padding: 112px clamp(24px, 10.8vw, 164px) 120px; background: #efeee9; }
+  .approach { position: relative; z-index: 1; margin-top: -92px; padding: 166px clamp(24px, 10.8vw, 164px) 108px; background: linear-gradient(180deg, rgba(239,238,233,0) 0, rgba(239,238,233,.22) 26px, #efeee9 104px); }
   .section-label { display: flex; gap: 18px; color: #687577; font-size: 9px; letter-spacing: .18em; }
   .section-label span:first-child { color: #a28e6b; }
-  .approach-grid { display: grid; grid-template-columns: 1.05fr .8fr; gap: 10%; align-items: start; margin-top: 48px; }
+  .approach-grid { display: grid; grid-template-columns: 1.05fr .8fr; gap: 8%; align-items: start; margin-top: 42px; }
   h2 { font-size: clamp(45px, 6.5vw, 78px); line-height: 1.02; }
   .approach h2 em { color: #9a8b70; }
   .approach-copy { max-width: 460px; padding-top: 7px; }
-  .approach-copy p { color: #647174; font-size: 13px; line-height: 1.9; }
-  .approach-copy .approach-lead { margin-top: 0; color: #263a40; font-family: Georgia, "Times New Roman", serif; font-size: 22px; line-height: 1.45; }
+  .approach-copy p { color: #59686a; font-size: 14px; line-height: 1.8; }
+  .approach-copy .approach-lead { margin-top: 0; color: #263a40; font-family: Georgia, "Times New Roman", serif; font-size: clamp(21px, 2vw, 25px); line-height: 1.42; letter-spacing: -.015em; }
   .underlined-link { display: inline-flex; gap: 18px; align-items: center; margin-top: 13px; padding-bottom: 9px; border-bottom: 1px solid #9e9a8e; font-size: 11px; text-decoration: none; }
-  .values { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 92px; border-top: 1px solid #d4d2c9; }
+  .values { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 72px; border-top: 1px solid #d4d2c9; }
   .value { display: flex; min-height: 160px; align-items: flex-start; gap: 15px; padding: 25px 18px 10px 0; border-bottom: 1px solid #d4d2c9; }
   .value + .value { padding-left: 24px; border-left: 1px solid #d4d2c9; }
   .value-number { color: #9a8b70; font-size: 9px; letter-spacing: .1em; }
@@ -217,9 +217,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     .hero-copy { max-width: 300px; margin-top: 18px; font-size: 13px; line-height: 1.65; }
     .hero-bottom { align-items: flex-end; }
     .hero-index { max-width: 110px; text-align: right; line-height: 1.7; }
-    .approach { padding-top: 78px; padding-bottom: 82px; }
-    .approach-grid { grid-template-columns: 1fr; gap: 30px; margin-top: 35px; }
-    .approach-copy .approach-lead { font-size: 20px; }
+    .approach { margin-top: -64px; padding-top: 122px; padding-bottom: 76px; background: linear-gradient(180deg, rgba(239,238,233,0) 0, rgba(239,238,233,.3) 20px, #efeee9 72px); }
+    .approach-grid { grid-template-columns: 1fr; gap: 25px; margin-top: 30px; }
+    .approach-copy .approach-lead { font-size: 21px; }
     .values { grid-template-columns: 1fr; margin-top: 55px; }
     .value { min-height: 115px; padding: 22px 0; }
     .value + .value { padding-left: 0; border-left: 0; }
@@ -230,7 +230,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   }
   @media (prefers-reduced-motion: reduce) { :global(html) { scroll-behavior: auto; } .hero-photo { animation: none; } .primary-action { transition: none; } }
 
-  .doctor-feature { padding: 100px clamp(24px, 9vw, 130px) 112px; background: #e8e7e0; color: #1e2c31; }
+  .doctor-feature { padding: 88px clamp(24px, 9vw, 130px) 104px; background: #efeee9; color: #1e2c31; }
   .doctor-feature-inner { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .doctor-eyebrow { display:flex; align-items:center; gap:10px; margin:0 0 28px; color:#6c7775; font-size:10px; font-weight:700; letter-spacing:.2em; }
   .doctor-eyebrow span { width:24px; height:1px; background:#82908b; }
@@ -241,7 +241,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .doctor-feature h2 { font-size:clamp(46px, 7vw, 78px); line-height:1; }
   .doctor-specialty { margin:18px 0 0; font-size:16px; line-height:1.6; }
   .doctor-qualifications { margin:12px 0 0; color:#64716e; font-size:12px; letter-spacing:.06em; }
-  .doctor-description { max-width:590px; margin:26px auto 0; color:#596765; font-size:14px; line-height:1.9; }
+  .doctor-description { max-width:590px; margin:24px auto 0; color:#596765; font-size:15px; line-height:1.8; }
   .doctor-demo-note { max-width:590px; margin:18px auto 0; color:#777f7b; font-size:11px; line-height:1.7; }
   .doctor-more { display:inline-flex; gap:25px; align-items:center; margin-top:28px; padding-bottom:8px; border-bottom:1px solid #82908b; font-size:12px; text-decoration:none; }
   .doctor-more span { font-size:17px; }
