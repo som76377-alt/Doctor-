@@ -48,9 +48,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     <section class="approach" id="approach">
       <div class="scalpel-stage" aria-hidden="true">
         <svg class="scalpel-drawing" viewBox="0 0 480 190" role="presentation" focusable="false">
+          <path class="scalpel-cut-line" d="M18 158 C77 158 119 157 146 151 Q157 148 156 152" />
+          <path class="scalpel-cut-line" d="M184 156 Q209 163 247 160 T462 158" />
           <g class="scalpel-motion">
-            <path class="scalpel-cut-line" d="M18 158 C77 158 119 157 146 151 Q157 148 167 152" />
-            <path class="scalpel-cut-line" d="M181 156 Q209 163 247 160 T462 158" />
             <path class="scalpel-outline" d="M166 151 L194 123 Q198 119 202 123 L213 132 Q216 136 211 141 L184 157" />
             <path class="scalpel-detail" d="M174 148 L195 128 Q198 125 200 128" />
             <path class="scalpel-outline" d="M201 124 L279 47 L324 11 Q334 3 343 12 Q352 21 343 30 L301 71 L213 134" />
@@ -303,7 +303,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       const update = () => {
         frame = 0;
         current += (target - current) * 0.18;
-        const offset = Math.sin(current * Math.PI * 6) * 18;
+        const offset = Math.sin(current * Math.PI * 6) * 12;
         motion.style.transform = "translateX(" + offset.toFixed(2) + "px)";
         if (Math.abs(target - current) > 0.001) frame = requestAnimationFrame(update);
       };
