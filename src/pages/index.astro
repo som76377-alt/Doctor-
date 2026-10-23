@@ -154,7 +154,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         const progress = Math.min(1, Math.max(0, latestY / maxScroll));
         stage.classList.toggle("is-active", latestY > 12);
         // The cut path spans the entire viewport; only its revealed length changes with scroll.
-        cut.style.strokeDashoffset = String(1 - progress);
+        cut.style.strokeDashoffset = "0";
         if (!reduced) {
           const sway = Math.sin(progress * Math.PI * 14) * 3;
           const tilt = Math.sin(progress * Math.PI * 8) * 1.4;
