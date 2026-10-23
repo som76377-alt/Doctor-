@@ -10,7 +10,7 @@ The first isolated implementation lives at `src/pages/paper-reveal.astro` on `fe
 - `html2canvas` captures the self-contained cover artwork. The capture is split into left and right canvas textures, then mapped onto separate Three.js meshes. The cover intentionally uses no remote image assets, avoiding cross-origin texture failures in this prototype.
 - Each paper half uses subdivided `PlaneGeometry`; its vertices are re-mapped along a curved cross-section as scroll progress changes. The two halves move outward independently.
 - Each half has a front texture, a pale underside material, an animated inner cut-edge mesh and changing vertex normals. Directional/ambient lighting plus a canvas drop shadow strengthen the paper cues.
-- GSAP `ScrollTrigger` pins the stage and scrubs the same animation forward or backward from scroll progress. It does not add a delayed pointer-chasing animation.
+- The stage uses CSS `position: sticky` while GSAP `ScrollTrigger` maps the track’s scroll progress to the same animation forward or backward. This avoids injected pin spacing, and it does not add delayed pointer-chasing animation.
 - A CSS split-page fallback is prepared for WebGL/capture failure or context loss. It is intentionally simpler than the Three.js paper deformation.
 - `prefers-reduced-motion: reduce` disables the transition and exposes the underlying page directly.
 
