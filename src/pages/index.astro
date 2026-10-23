@@ -134,14 +134,14 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   import { PageFlip } from "page-flip";
 
   const startClinicBook = () => {
-    const book = document.querySelector("#clinic-book");
-    const previous = document.querySelector(".page-control--previous");
-    const next = document.querySelector(".page-control--next");
-    const count = document.querySelector(".page-status-count");
-    const fill = document.querySelector(".page-status-fill");
+    const book = document.querySelector<HTMLElement>("#clinic-book");
+    const previous = document.querySelector<HTMLButtonElement>(".page-control--previous");
+    const next = document.querySelector<HTMLButtonElement>(".page-control--next");
+    const count = document.querySelector<HTMLElement>(".page-status-count");
+    const fill = document.querySelector<HTMLElement>(".page-status-fill");
     if (!book || !previous || !next || !count || !fill || book.dataset.ready === "true") return;
 
-    const pages = Array.from(book.querySelectorAll(".clinic-book-page"));
+    const pages = Array.from(book.querySelectorAll<HTMLElement>(".clinic-book-page"));
     if (pages.length < 2) return;
 
     const pageFlip = new PageFlip(book, {
@@ -171,10 +171,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     book.dataset.ready = "true";
 
     const pageTargets = { "#top": 0, "#approach": 1, "#doctor": 2, "#contact": 3 };
-    book.addEventListener("click", (event) => {
-      const link = event.target.closest("a[href^='#']");
+    book.addEventListener("click", (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const link = event.target.closest<HTMLAnchorElement>("a[href^='#']");
       if (!link) return;
-      const target = pageTargets[link.getAttribute("href")];
+      const href = link.getAttribute("href");
+      if (!href || !(href in pageTargets)) return;
+      const target = pageTargets[href as keyof typeof pageTargets];
       if (target === undefined) return;
       event.preventDefault();
       if (target > pageFlip.getCurrentPageIndex()) pageFlip.flip(target, "top");
@@ -184,7 +187,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     previous.addEventListener("click", () => pageFlip.flipPrev("top"));
     next.addEventListener("click", () => pageFlip.flipNext("top"));
 
-    const updateControls = (pageIndex) => {
+    const updateControls = (pageIndex: number) => {
       const current = Math.max(0, Math.min(pages.length - 1, Number(pageIndex) || 0));
       count.textContent = String(current + 1).padStart(2, "0") + " / " + String(pages.length).padStart(2, "0");
       fill.style.width = (((current + 1) / pages.length) * 100).toFixed(2) + "%";
@@ -193,8 +196,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       book.dataset.currentPage = String(current);
     };
 
-    pageFlip.on("flip", (event) => updateControls(event.data));
-    pageFlip.on("init", (event) => updateControls(event.data?.page ?? 0));
+    pageFlip.on("flip", (event: { data: number }) => updateControls(event.data));
+    pageFlip.on("init", (event: { data?: { page?: number } }) => updateControls(event.data?.page ?? 0));
     updateControls(0);
 
     // Keep the live fold attached to the pointer on touchscreens and desktop.
