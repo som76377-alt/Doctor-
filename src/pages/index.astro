@@ -47,29 +47,18 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
     <section class="approach" id="approach">
       <div class="injection-stage" aria-hidden="true">
-        <svg class="injection-drawing" viewBox="0 0 100 100" preserveAspectRatio="none" role="presentation" focusable="false">
-          <!-- Full viewport incision, revealed from the top down as the page scrolls. -->
-          <path class="injection-cut" d="M50 0 V100" pathLength="1" />
-          <!-- Nested SVG keeps the syringe's proportions intact on both mobile and desktop. -->
-          <svg class="injection-tool" x="0" y="18" width="100" height="64" viewBox="0 0 240 320" role="presentation" focusable="false">
-            <g class="injection-motion">
-              <!-- Plunger and thumb rest -->
-              <path class="injection-outline" d="M91 37 L149 37 Q154 37 154 43 L154 49 Q154 54 149 54 L135 54 L135 81 M105 54 L105 81 M85 80 L155 80" />
-              <path class="injection-detail" d="M104 61 L136 61 M104 69 L136 69" />
-              <!-- Barrel, deliberately tapered slightly for a near-camera perspective -->
-              <path class="injection-outline" d="M99 84 L141 84 L134 228 Q120 240 106 228 Z" />
-              <path class="injection-detail" d="M103 96 L137 96" />
-              <!-- Measurement graduations -->
-              <path class="injection-graduation" d="M106 112 L121 112 M105 124 L116 124 M105 136 L121 136 M104 148 L116 148 M104 160 L121 160 M103 172 L116 172 M103 184 L121 184 M102 196 L116 196 M102 208 L121 208" />
-              <!-- Finger wings, connector and fine needle -->
-              <path class="injection-outline" d="M97 85 L83 91 L84 103 L103 101 M143 85 L157 91 L156 103 L137 101" />
-              <path class="injection-outline" d="M107 230 L133 230 L129 246 L111 246 Z" />
-              <path class="injection-detail" d="M112 246 L116 258 L124 258 L128 246 M120 258 L120 300" />
-              <path class="injection-detail" d="M117 296 L120 304 L123 296" />
-              <!-- Subtle barrel highlight -->
-              <path class="injection-highlight" d="M109 101 L109 220" />
-            </g>
-          </svg>
+        <div class="injection-trail"></div>
+        <svg class="injection-syringe" viewBox="0 0 80 240" role="presentation" focusable="false" aria-hidden="true">
+          <g class="syringe-lines">
+            <rect x="20" y="7" width="40" height="12" rx="4" />
+            <path d="M40 19 V51" />
+            <path d="M23 50 H57 M25 50 L28 58 M55 50 L52 58" />
+            <path d="M28 58 H52 V166 Q52 171 48 174 L44 183 H36 L32 174 Q28 171 28 166 Z" />
+            <path d="M31 64 H49" />
+            <path d="M32 78 H44 M32 90 H39 M32 102 H44 M32 114 H39 M32 126 H44 M32 138 H39 M32 150 H44 M32 162 H39" />
+            <path d="M34 183 L35 192 H45 L46 183" />
+            <path d="M40 192 V238" />
+          </g>
         </svg>
       </div>
       <div class="approach-grid">
@@ -140,37 +129,41 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   (() => {
     const setupInjection = () => {
       const stage = document.querySelector(".injection-stage");
-      const motion = document.querySelector(".injection-motion");
-      const cut = document.querySelector(".injection-cut");
-      if (!stage || !motion || !cut || stage.dataset.ready === "true") return;
+      if (!stage || stage.dataset.ready === "true") return;
       stage.dataset.ready = "true";
 
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const startY = 18;
+      const syringeHeight = 150;
       let frame = 0;
       let latestY = window.scrollY;
+
       const draw = () => {
         frame = 0;
         const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
         const progress = Math.min(1, Math.max(0, latestY / maxScroll));
+        const travel = Math.max(0, window.innerHeight - syringeHeight - startY - 18);
+        const syringeY = startY + progress * travel;
+
+        // Move only down the vertical axis; grow the trail to the syringe's back edge.
+        stage.style.setProperty("--injection-y", syringeY.toFixed(1) + "px");
+        stage.style.setProperty("--trail-height", syringeY.toFixed(1) + "px");
         stage.classList.toggle("is-active", latestY > 12);
-        // The cut path spans the entire viewport; only its revealed length changes with scroll.
-        cut.style.strokeDashoffset = "0";
-        if (!reduced) {
-          const sway = Math.sin(progress * Math.PI * 14) * 3;
-          const tilt = Math.sin(progress * Math.PI * 8) * 1.4;
-          motion.style.transform = "translate(" + sway.toFixed(2) + "px, 0px) rotate(" + tilt.toFixed(2) + "deg)";
-        }
       };
-      const onScroll = () => {
+
+      const onScrollOrResize = () => {
         latestY = window.scrollY;
         if (!frame) frame = requestAnimationFrame(draw);
       };
-      window.addEventListener("scroll", onScroll, { passive: true });
-      window.addEventListener("resize", onScroll, { passive: true });
+      window.addEventListener("scroll", onScrollOrResize, { passive: true });
+      window.addEventListener("resize", onScrollOrResize, { passive: true });
       draw();
     };
-    if ( (document.readyState === "loading") ) document.addEventListener("DOMContentLoaded", setupInjection, { once: true });
-    else setupInjection();
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", setupInjection, { once: true });
+    } else {
+      setupInjection();
+    }
   })();
 </script>
 
@@ -219,42 +212,48 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     height: 100vh;
     height: 100dvh;
     pointer-events: none;
-    color: #090a09;
     opacity: 0;
-    transition: opacity .25s ease;
+    transition: opacity .18s ease;
+    --injection-x: 88%;
+    --injection-y: 18px;
+    --trail-height: 18px;
   }
   .injection-stage.is-active { opacity: 1; }
-  .injection-drawing { display: block; width: 100%; height: 100%; overflow: visible; }
-  .injection-motion { transform-origin: 120px 190px; transform-box: view-box; will-change: transform; }
-  .injection-outline, .injection-detail, .injection-graduation, .injection-highlight {
+  .injection-trail {
+    position: absolute;
+    top: 0;
+    left: var(--injection-x);
+    width: 1.8px;
+    height: var(--trail-height);
+    background: #11110f;
+    transform: translateX(-50%);
+  }
+  .injection-syringe {
+    position: absolute;
+    top: var(--injection-y);
+    left: var(--injection-x);
+    display: block;
+    width: 50px;
+    height: 150px;
+    overflow: visible;
+    transform: translateX(-50%);
+    color: #11110f;
+  }
+  .syringe-lines {
     fill: none;
     stroke: currentColor;
+    stroke-width: 2.5;
     stroke-linecap: round;
     stroke-linejoin: round;
     vector-effect: non-scaling-stroke;
   }
-  .injection-outline { stroke-width: 3.3; }
-  .injection-detail { stroke-width: 2.2; }
-  .injection-graduation { stroke-width: 2.5; }
-  .injection-highlight { stroke: rgba(255,255,255,.75); stroke-width: 1.6; }
-  .injection-cut {
-    fill: none;
-    stroke: #080908;
-    stroke-width: 2.4;
-    stroke-linecap: round;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    vector-effect: non-scaling-stroke;
-  }
   @media (max-width: 650px) {
-    .injection-stage { height: 100vh; height: 100dvh; }
-    .injection-outline { stroke-width: 3.1; }
-    .injection-detail { stroke-width: 2.1; }
-    .injection-cut { stroke-width: 2.1; }
+    .injection-stage { --injection-x: 88%; }
+    .injection-trail { width: 1.7px; }
+    .injection-syringe { width: 50px; height: 150px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .injection-stage { transition: none; }
-    .injection-motion { transform: none !important; }
   }
 
   .fabric { position: absolute; z-index: -1; right: -10%; bottom: -55px; left: -10%; height: 100px; opacity: .5; }
