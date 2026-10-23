@@ -8,10 +8,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 >
   <main class="page-shell">
       <div class="injection-stage" aria-hidden="true">
-        <div class="tear-flap tear-flap-left"></div>
-        <div class="tear-flap tear-flap-right"></div>
-        <div class="tear-gap-shadow"></div>
-        <div class="injection-trail"></div>
+        <div class="paper-underpage"></div>
+        <div class="paper-base"></div>
+        <div class="paper-flap paper-flap-left"></div>
+        <div class="paper-flap paper-flap-right"></div>
+        <div class="paper-tear-shadow"></div>
         <svg class="injection-syringe" viewBox="0 0 80 240" role="presentation" focusable="false" aria-hidden="true">
           <g class="syringe-lines">
             <rect x="20" y="7" width="40" height="12" rx="4" />
@@ -133,8 +134,38 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   (() => {
     const setupInjection = () => {
       const stage = document.querySelector(".injection-stage");
-      if (!stage || stage.dataset.ready === "true") return;
-      // Mount the fixed effect directly on body so section overflow cannot clip it.
+      const sourcePage = document.querySelector(".page-shell");
+      if (!stage || !sourcePage || stage.dataset.ready === "true") return;
+
+      const underpage = stage.querySelector(".paper-underpage");
+      const base = stage.querySelector(".paper-base");
+      const leftFlap = stage.querySelector(".paper-flap-left");
+      const rightFlap = stage.querySelector(".paper-flap-right");
+      if (!underpage || !base || !leftFlap || !rightFlap) return;
+
+      // These are full DOM copies of the visible webpage, not isolated decorative strips.
+      const makePageCopy = (host, role) => {
+        const copy = sourcePage.cloneNode(true);
+        copy.classList.add("paper-copy");
+        copy.dataset.paperRole = role;
+        copy.setAttribute("aria-hidden", "true");
+        copy.setAttribute("inert", "");
+        copy.querySelectorAll(".injection-stage, script, iframe, video, audio").forEach(node => node.remove());
+        copy.removeAttribute("id");
+        copy.querySelectorAll("[id]").forEach(node => node.removeAttribute("id"));
+        copy.querySelectorAll("a, button, input, select, textarea, [tabindex]").forEach(node => {
+          node.setAttribute("tabindex", "-1");
+        });
+        host.appendChild(copy);
+        return copy;
+      };
+
+      const underCopy = makePageCopy(underpage, "under");
+      const baseCopy = makePageCopy(base, "base");
+      const leftCopy = makePageCopy(leftFlap, "left");
+      const rightCopy = makePageCopy(rightFlap, "right");
+
+      // Move the overlay to body so no section's overflow can crop the 3D fold.
       if (stage.parentElement !== document.body) document.body.appendChild(stage);
       stage.dataset.ready = "true";
 
@@ -145,20 +176,28 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       const draw = () => {
         frame = 0;
-        const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const viewportHeight = window.innerHeight;
+        const maxScroll = Math.max(1, document.documentElement.scrollHeight - viewportHeight);
         const progress = Math.min(1, Math.max(0, latestY / maxScroll));
-        const travel = Math.max(0, window.innerHeight - syringeHeight - startY - 18);
+        const travel = Math.max(0, viewportHeight - syringeHeight - startY - 18);
         const syringeY = startY + progress * travel;
-        // The tear runs behind the whole syringe, down to the needle tip.
-        const trailHeight = Math.min(window.innerHeight, syringeY + syringeHeight);
-        // As the syringe moves down, both paper edges peel away from the center seam.
-        const openingProgress = Math.min(1, Math.max(0, syringeY / (window.innerHeight * 0.55)));
-        const maxOpening = window.innerWidth <= 650 ? 62 : 92;
-        const openingWidth = 10 + openingProgress * (maxOpening - 10);
+        const tearHeight = Math.min(viewportHeight, syringeY + syringeHeight);
+        const underOffset = Math.round(viewportHeight * 0.72);
+        const openingProgress = Math.min(1, Math.max(0, (syringeY - startY) / (viewportHeight * 0.62)));
+        const foldDistance = openingProgress * Math.min(window.innerWidth <= 650 ? 92 : 190, window.innerWidth * 0.22);
+        const foldAngle = openingProgress * (window.innerWidth <= 650 ? 17 : 22);
 
         stage.style.setProperty("--injection-y", syringeY.toFixed(1) + "px");
-        stage.style.setProperty("--trail-height", trailHeight.toFixed(1) + "px");
-        stage.style.setProperty("--tear-gap", openingWidth.toFixed(1) + "px");
+        stage.style.setProperty("--tear-height", tearHeight.toFixed(1) + "px");
+        stage.style.setProperty("--fold-distance", foldDistance.toFixed(1) + "px");
+        stage.style.setProperty("--fold-angle", foldAngle.toFixed(2) + "deg");
+
+        // Keep all front-paper layers locked to the current page scroll.
+        underCopy.style.transform = "translate3d(0," + (-latestY - underOffset).toFixed(1) + "px,0)";
+        baseCopy.style.transform = "translate3d(0," + (-latestY - tearHeight).toFixed(1) + "px,0)";
+        leftCopy.style.transform = "translate3d(0," + (-latestY).toFixed(1) + "px,0)";
+        rightCopy.style.transform = "translate3d(0," + (-latestY).toFixed(1) + "px,0)";
+
         stage.classList.toggle("is-active", latestY > 12);
       };
 
@@ -218,77 +257,142 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .hero-index span { color: #1e2c31; }
   .injection-stage {
     position: fixed;
-    z-index: 8;
+    z-index: 80;
     inset: 0;
     width: 100vw;
     height: 100vh;
     height: 100dvh;
+    overflow: hidden;
     pointer-events: none;
     opacity: 0;
+    isolation: isolate;
+    perspective: 1400px;
+    perspective-origin: 50% 42%;
+    transform-style: preserve-3d;
     transition: opacity .18s ease;
     --injection-y: 18px;
-    --trail-height: 168px;
-    --tear-gap: 10px;
-    --tear-flap-width: clamp(48px, 12vw, 112px);
+    --tear-height: 168px;
+    --fold-distance: 0px;
+    --fold-angle: 0deg;
+    --paper-edge: 10px;
   }
   .injection-stage.is-active { opacity: 1; }
-  .tear-flap {
+  .paper-underpage,
+  .paper-base,
+  .paper-flap {
     position: absolute;
-    top: 0;
-    height: var(--trail-height);
-    width: var(--tear-flap-width);
-    overflow: visible;
+    left: 0;
+    width: 100vw;
+    pointer-events: none;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+  .paper-underpage {
+    z-index: 1;
+    inset: 0;
+    overflow: hidden;
+    background-color: #e9e4d9;
+    background-image:
+      radial-gradient(ellipse at 16% 18%, rgba(255,255,255,.48), transparent 42%),
+      radial-gradient(ellipse at 84% 76%, rgba(151,133,105,.10), transparent 44%);
+  }
+  .paper-base {
+    z-index: 3;
+    top: var(--tear-height);
+    height: calc(100dvh - var(--tear-height));
+    overflow: hidden;
     background: #efeee9;
-    will-change: left, width;
+    box-shadow: 0 -5px 14px rgba(27, 25, 20, .10);
   }
-  .tear-flap-left {
-    left: calc(50vw - (var(--tear-gap) / 2) - var(--tear-flap-width));
-    background: linear-gradient(90deg, #dcd7cc 0%, #efede6 42%, #f7f5ed 78%, #cfc8bc 100%);
-    clip-path: polygon(
-      0 0, 100% 0,
-      89% 3%, 100% 7%, 84% 12%, 100% 16%,
-      87% 21%, 100% 26%, 81% 31%, 100% 35%,
-      88% 40%, 100% 45%, 83% 50%, 100% 54%,
-      90% 59%, 100% 64%, 82% 69%, 100% 73%,
-      88% 78%, 100% 83%, 80% 88%, 100% 93%,
-      87% 97%, 100% 100%, 0 100%
-    );
-    filter: drop-shadow(3px 2px 3px rgba(17, 22, 20, .17));
-  }
-  .tear-flap-right {
-    left: calc(50vw + (var(--tear-gap) / 2));
-    background: linear-gradient(90deg, #cfc8bc 0%, #f7f5ed 22%, #efede6 58%, #dcd7cc 100%);
-    clip-path: polygon(
-      0 0, 100% 0, 100% 100%, 0 100%,
-      13% 97%, 0 93%, 20% 88%, 0 83%,
-      12% 78%, 0 73%, 18% 69%, 0 64%,
-      10% 59%, 0 54%, 17% 50%, 0 45%,
-      12% 40%, 0 35%, 19% 31%, 0 26%,
-      13% 21%, 0 16%, 16% 12%, 0 7%, 11% 3%
-    );
-    filter: drop-shadow(-3px 2px 3px rgba(17, 22, 20, .17));
-  }
-  .tear-gap-shadow {
-    position: absolute;
+  .paper-flap {
+    z-index: 4;
     top: 0;
-    left: calc(50vw - (var(--tear-gap) / 2));
-    width: var(--tear-gap);
-    height: var(--trail-height);
-    background: linear-gradient(90deg, rgba(20, 25, 23, .18), rgba(20, 25, 23, .035) 24%, transparent 48%, transparent 52%, rgba(20, 25, 23, .035) 76%, rgba(20, 25, 23, .18));
+    width: 50vw;
+    height: var(--tear-height);
+    overflow: hidden;
+    background: #efeee9;
+    will-change: transform, height;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    filter: drop-shadow(0 9px 8px rgba(29, 25, 19, .18));
   }
-  .injection-trail {
+  .paper-flap-left {
+    left: 0;
+    transform-origin: 100% 48%;
+    transform: translateX(calc(0px - var(--fold-distance))) rotateY(calc(0deg - var(--fold-angle)));
+    clip-path: polygon(
+      0 0, 100% 0, 98.8% 3%, 100% 7%, 97.2% 11%, 99.2% 15%,
+      96.9% 19%, 99.5% 24%, 97.1% 28%, 100% 33%, 96.4% 39%,
+      98.9% 45%, 96.8% 51%, 100% 57%, 97.4% 62%, 99.4% 67%,
+      96.5% 74%, 99.1% 79%, 97.2% 85%, 100% 91%, 97.7% 96%, 99% 100%, 0 100%
+    );
+  }
+  .paper-flap-right {
+    left: 50vw;
+    transform-origin: 0 48%;
+    transform: translateX(var(--fold-distance)) rotateY(var(--fold-angle));
+    clip-path: polygon(
+      0 0, 100% 0, 100% 100%, 0 100%, 2.2% 96%, 0 91%,
+      3.4% 85%, .8% 80%, 3.7% 74%, 0 68%, 2.9% 63%, .5% 57%,
+      3.1% 51%, 1.1% 46%, 3.6% 40%, 0 34%, 2.6% 29%, .4% 24%,
+      3.1% 19%, .8% 15%, 3% 11%, 0 7%, 1.2% 3%
+    );
+  }
+  .paper-copy {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100vw !important;
+    max-width: none !important;
+    min-height: 100%;
+    margin: 0 !important;
+    pointer-events: none !important;
+    overflow: visible !important;
+    background: #efeee9;
+    will-change: transform;
+  }
+  .paper-flap-right .paper-copy { left: -50vw; }
+  .paper-flap::before,
+  .paper-flap::after {
+    content: "";
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
+  .paper-flap-left::before {
+    right: 0;
+    width: var(--paper-edge);
+    background: linear-gradient(90deg, rgba(239,238,233,0), rgba(186,176,157,.55) 48%, rgba(70,61,48,.22));
+    box-shadow: 2px 0 1px rgba(255,255,255,.68) inset;
+  }
+  .paper-flap-right::before {
+    left: 0;
+    width: var(--paper-edge);
+    background: linear-gradient(90deg, rgba(70,61,48,.22), rgba(186,176,157,.55) 48%, rgba(239,238,233,0));
+    box-shadow: -2px 0 1px rgba(255,255,255,.68) inset;
+  }
+  .paper-flap::after {
+    inset: 0;
+    opacity: .08;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='.3'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+  .paper-tear-shadow {
     position: absolute;
     z-index: 2;
     top: 0;
     left: 50vw;
-    width: 1.25px;
-    height: var(--trail-height);
-    background: rgba(10, 12, 11, .45);
+    width: clamp(16px, 3.6vw, 42px);
+    height: var(--tear-height);
     transform: translateX(-50%);
+    background: linear-gradient(90deg, rgba(20,18,14,.36), rgba(20,18,14,.13) 22%, rgba(20,18,14,.025) 43%, transparent 50%, rgba(20,18,14,.025) 57%, rgba(20,18,14,.13) 78%, rgba(20,18,14,.36));
   }
   .injection-syringe {
     position: absolute;
-    z-index: 3;
+    z-index: 10;
     top: var(--injection-y);
     left: 50vw;
     display: block;
@@ -296,8 +400,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     height: 150px;
     overflow: visible;
     transform: translateX(-50%);
+    transform-origin: 50% 10%;
     color: #11110f;
-    filter: drop-shadow(0 1px 0 rgba(239, 238, 233, .55));
+    filter: drop-shadow(0 2px 2px rgba(18, 17, 15, .24));
   }
   .syringe-lines {
     fill: none;
@@ -308,9 +413,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     vector-effect: non-scaling-stroke;
   }
   @media (max-width: 650px) {
-    .injection-stage { --tear-flap-width: clamp(34px, 13vw, 58px); }
-    .tear-gap-shadow { opacity: .85; }
-    .injection-trail { width: 1.1px; }
+    .injection-stage { --paper-edge: 7px; perspective: 950px; }
+    .paper-flap { filter: drop-shadow(0 6px 5px rgba(29,25,19,.2)); }
+    .paper-tear-shadow { width: 18px; }
     .injection-syringe { width: 50px; height: 150px; }
   }
   @media (prefers-reduced-motion: reduce) {
