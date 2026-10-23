@@ -143,11 +143,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   :global(body) { margin: 0; min-width: 320px; color: #1e2c31; font-family: Inter, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
   :global(a) { color: inherit; }
   .page-shell { overflow: hidden; background: #efeee9; }
-  .hero { position: relative; isolation: isolate; display: flex; min-height: min(900px, 100svh); min-height: max(720px, 100svh); flex-direction: column; overflow: hidden; color: #f8f7f2; background: #263f48; }
+  .hero { position: relative; isolation: isolate; display: flex; min-height: clamp(620px, 84svh, 820px); flex-direction: column; overflow: hidden; color: #f8f7f2; background: #263f48; }
   .hero-photo { position: absolute; z-index: -3; inset: 0; background-image: url("https://images.pexels.com/photos/7108396/pexels-photo-7108396.jpeg?auto=compress&cs=tinysrgb&w=2400"); background-position: center 46%; background-size: cover; transform: scale(1.42); transform-origin: center center; will-change: transform; }
-  .hero-shade { position: absolute; z-index: -2; inset: 0; background: linear-gradient(180deg, rgba(143,178,217,.38) 0%, rgba(100,145,199,.55) 48%, rgba(34,72,158,.88) 100%); }
+  .hero-shade { position: absolute; z-index: -2; inset: 0; background: linear-gradient(180deg, rgba(20,36,43,.16) 0%, rgba(20,36,43,.34) 45%, rgba(20,36,43,.76) 100%); }
   .grain, .contact-grain { position: absolute; z-index: -1; inset: 0; pointer-events: none; opacity: .11; mix-blend-mode: soft-light; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E"); }
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 27px clamp(22px, 6.2vw, 94px); border-bottom: 1px solid rgba(255,255,255,.18); }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px clamp(22px, 6.2vw, 94px); border-bottom: 1px solid rgba(255,255,255,.18); }
   .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
   .brand-symbol { position: relative; display: inline-grid; width: 31px; height: 31px; place-items: center; border: 1px solid rgba(255,255,255,.74); border-radius: 50%; }
   .brand-symbol span { position: absolute; width: 13px; height: 1px; background: currentColor; }
@@ -155,20 +155,20 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .brand-name { font-size: 10px; font-weight: 700; letter-spacing: .2em; }
   .top-link { display: inline-flex; align-items: center; gap: 17px; font-size: 12px; text-decoration: none; }
   .top-link span { font-size: 17px; }
-  .hero-content { width: min(760px, 100%); margin: auto 0; padding: 76px clamp(24px, 10.8vw, 164px) 94px; }
+  .hero-content { width: min(760px, 100%); margin: auto 0; padding: 46px clamp(24px, 10.8vw, 164px) 52px; }
   .kicker { display: flex; align-items: center; gap: 11px; margin: 0 0 25px; color: #d9d4c5; font-size: 9px; font-weight: 700; letter-spacing: .2em; }
   .kicker-line { width: 28px; height: 1px; background: #c6bfae; }
   h1, h2 { margin: 0; font-weight: 400; letter-spacing: -.065em; }
   h1 { font-size: clamp(58px, 8.6vw, 116px); line-height: .94; }
   h1 em, h2 em { color: #d3c9b5; font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
-  .hero-copy { max-width: 360px; margin: 27px 0 0; color: rgba(248,247,242,.79); font-size: 14px; line-height: 1.8; }
-  .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 28px; margin-top: 32px; }
+  .hero-copy { max-width: 360px; margin: 21px 0 0; color: rgba(248,247,242,.88); font-size: 14px; line-height: 1.7; }
+  .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 25px; }
   .primary-action { display: inline-flex; min-height: 50px; align-items: center; justify-content: space-between; gap: 34px; padding: 0 17px; color: #24383e; background: #e9e5db; font-size: 11px; font-weight: 650; text-decoration: none; transition: background .2s, transform .2s; }
   .primary-action:hover { transform: translateY(-2px); background: #fff; }
   .primary-action span { font-size: 17px; }
   .text-action { display: inline-flex; align-items: center; gap: 13px; color: #f8f7f2; font-size: 11px; text-decoration: none; }
   .text-action span { color: #d3c9b5; font-size: 16px; }
-  .hero-bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 clamp(22px, 6.2vw, 94px) 28px; }
+  .hero-bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 clamp(22px, 6.2vw, 94px) 20px; }
   .location-chip { display: flex; align-items: center; gap: 10px; font-size: 9px; letter-spacing: .13em; }
   .location-dot { width: 6px; height: 6px; border-radius: 50%; background: #d3c9b5; box-shadow: 0 0 0 4px rgba(211,201,181,.15); }
   .hero-index { margin: 0; color: rgba(255,255,255,.68); font-size: 8px; letter-spacing: .14em; }
@@ -211,10 +211,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .back-top { color: inherit; text-decoration: none; letter-spacing: .04em; }
   @media (min-width: 1200px) { .hero-content { padding-left: 13vw; } }
   @media (max-width: 650px) {
-    .hero { min-height: 760px; min-height: 100svh; }
-    .topbar { padding-top: 20px; padding-bottom: 20px; }
-    .hero-content { padding-top: 70px; padding-bottom: 75px; }
-    .hero-copy { max-width: 300px; font-size: 13px; }
+    .hero { min-height: clamp(580px, 82svh, 700px); }
+    .topbar { padding-top: 16px; padding-bottom: 16px; }
+    .hero-content { padding-top: 34px; padding-bottom: 38px; }
+    .hero-copy { max-width: 300px; margin-top: 18px; font-size: 13px; line-height: 1.65; }
     .hero-bottom { align-items: flex-end; }
     .hero-index { max-width: 110px; text-align: right; line-height: 1.7; }
     .approach { padding-top: 78px; padding-bottom: 82px; }
