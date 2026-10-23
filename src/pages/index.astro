@@ -131,6 +131,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 </BaseLayout>
 
 <script>
+  import { PageFlip } from "page-flip";
+
   const startClinicBook = () => {
     const book = document.querySelector("#clinic-book");
     const previous = document.querySelector(".page-control--previous");
@@ -141,180 +143,32 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
     const pages = Array.from(book.querySelectorAll(".clinic-book-page"));
     if (pages.length < 2) return;
-    let current = 0;
-    let gesture = null;
-    let animating = false;
-    let raf = 0;
 
-    const setControls = () => {
-      count.textContent = String(current + 1).padStart(2, "0") + " / " + String(pages.length).padStart(2, "0");
-      fill.style.width = (((current + 1) / pages.length) * 100).toFixed(2) + "%";
-      previous.disabled = current === 0 || animating;
-      next.disabled = current === pages.length - 1 || animating;
-      book.dataset.currentPage = String(current);
-    };
-
-    const clearPageStyles = (page) => {
-      page.style.transform = "";
-      page.style.clipPath = "";
-      page.style.webkitClipPath = "";
-      page.style.boxShadow = "";
-      page.style.zIndex = "";
-      page.style.pointerEvents = "";
-      page.classList.remove("is-turning", "is-under-page");
-    };
-
-    const paint = () => {
-      raf = 0;
-      if (!gesture) return;
-      const { page, direction, startX, x, y, width, height } = gesture;
-      const delta = direction === "next" ? startX - x : x - startX;
-      const progress = Math.max(0, Math.min(1, delta / Math.max(1, width * 0.28)));
-      const bend = Math.max(0, Math.min(width * 0.22, Math.abs(delta) * 0.32));
-      const origin = direction === "next" ? "left center" : "right center";
-      const angle = (direction === "next" ? -1 : 1) * progress * 165;
-      page.style.transformOrigin = origin;
-      page.style.transform = "perspective(1800px) rotateY(" + angle + "deg) translateZ(0)";
-      page.style.clipPath = "none";
-      page.style.boxShadow = (direction === "next" ? "inset 16px 0 22px -20px" : "inset -16px 0 22px -20px") + " rgba(12,24,27," + (0.18 + progress * 0.45) + ")";
-      page.style.setProperty("--curl-progress", String(progress));
-      page.style.setProperty("--curl-x", (x / Math.max(1, width) * 100) + "%");
-      page.style.setProperty("--curl-y", (y / Math.max(1, height) * 100) + "%");
-      book.style.setProperty("--curl-x", (x / Math.max(1, width) * 100) + "%");
-      book.style.setProperty("--curl-y", (y / Math.max(1, height) * 100) + "%");
-      book.style.setProperty("--curl-shadow", String(0.12 + progress * 0.42));
-      book.dataset.dragProgress = String(progress);
-      if (direction === "next") {
-        const underneath = pages[current + 1];
-        if (underneath) underneath.classList.add("is-under-page");
-      } else {
-        const underneath = pages[current - 1];
-        if (underneath) underneath.classList.add("is-under-page");
-      }
-      gesture.progress = progress;
-    };
-
-    const requestPaint = () => { if (!raf) raf = requestAnimationFrame(paint); };
-
-    const finishGesture = (commit) => {
-      if (!gesture || animating) return;
-      const g = gesture;
-      gesture = null;
-      if (raf) cancelAnimationFrame(raf);
-      raf = 0;
-      const shouldTurn = commit && (g.progress > 0.12 || Math.abs(g.x - g.startX) > 18);
-      if (shouldTurn) {
-        animating = true;
-        const from = current;
-        current += g.direction === "next" ? 1 : -1;
-        current = Math.max(0, Math.min(pages.length - 1, current));
-        const turned = pages[from];
-        turned.classList.add("is-turning");
-        turned.style.transition = "transform 180ms cubic-bezier(.2,.72,.22,1), box-shadow 180ms ease";
-        turned.style.transform = "perspective(1800px) rotateY(" + (g.direction === "next" ? -180 : 180) + "deg) translateZ(0)";
-        turned.style.boxShadow = "none";
-        window.setTimeout(() => {
-          pages.forEach((p, i) => {
-            clearPageStyles(p);
-            p.style.display = i === current ? "block" : "none";
-            p.style.transform = "";
-            p.style.transition = "";
-          });
-          book.style.removeProperty("--curl-x");
-          book.style.removeProperty("--curl-y");
-          book.style.removeProperty("--curl-shadow");
-          delete book.dataset.dragProgress;
-          animating = false;
-          setControls();
-        }, 190);
-      } else {
-        g.page.style.transition = "transform 150ms ease-out, box-shadow 150ms ease-out";
-        g.page.style.transform = "";
-        g.page.style.boxShadow = "";
-        window.setTimeout(() => {
-          pages.forEach((p, i) => {
-            clearPageStyles(p);
-            p.style.display = i === current ? "block" : "none";
-            p.style.transition = "";
-          });
-          book.style.removeProperty("--curl-x");
-          book.style.removeProperty("--curl-y");
-          book.style.removeProperty("--curl-shadow");
-          delete book.dataset.dragProgress;
-          setControls();
-        }, 155);
-      }
-    };
-
-    const pointerDown = (event) => {
-      if (animating || gesture || event.target.closest("a,button")) return;
-      if (event.pointerType === "mouse" && event.button !== 0) return;
-      const rect = book.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const edgeZone = Math.min(100, Math.max(44, rect.width * 0.18));
-      let direction;
-      if (current < pages.length - 1 && x >= rect.width - edgeZone) direction = "next";
-      else if (current > 0 && x <= edgeZone) direction = "prev";
-      else if (current < pages.length - 1 && event.pointerType !== "mouse") direction = "next";
-      else if (current > 0) direction = "prev";
-      else direction = "next";
-      if ((direction === "next" && current >= pages.length - 1) || (direction === "prev" && current <= 0)) return;
-      event.preventDefault();
-      const page = pages[current];
-      gesture = { pointerId: event.pointerId, page, direction, startX: x, x, y: event.clientY - rect.top, width: rect.width, height: rect.height, progress: 0 };
-      page.classList.add("is-turning");
-      page.style.display = "block";
-      page.style.zIndex = "3";
-      const under = pages[current + (direction === "next" ? 1 : -1)];
-      if (under) {
-        under.style.display = "block";
-        under.style.zIndex = "2";
-        under.classList.add("is-under-page");
-      }
-      try { book.setPointerCapture(event.pointerId); } catch {}
-    };
-
-    const pointerMove = (event) => {
-      if (!gesture || event.pointerId !== gesture.pointerId) return;
-      const rect = book.getBoundingClientRect();
-      gesture.x = event.clientX - rect.left;
-      gesture.y = event.clientY - rect.top;
-      requestPaint();
-    };
-    const pointerUp = (event) => {
-      if (!gesture || event.pointerId !== gesture.pointerId) return;
-      finishGesture(true);
-    };
-    const pointerCancel = () => finishGesture(false);
-
-    pages.forEach((page, i) => {
-      page.style.display = i === 0 ? "block" : "none";
-      page.style.position = "absolute";
-      page.style.inset = "0";
-      page.style.width = "100%";
-      page.style.height = "100%";
-      page.style.backfaceVisibility = "hidden";
-      page.style.transformStyle = "preserve-3d";
-      page.style.willChange = "transform, box-shadow";
+    const pageFlip = new PageFlip(book, {
+      width: Math.max(280, book.clientWidth),
+      height: Math.max(420, book.clientHeight),
+      size: "stretch",
+      minWidth: 280,
+      maxWidth: 1600,
+      minHeight: 480,
+      maxHeight: 1200,
+      drawShadow: true,
+      maxShadowOpacity: 0.58,
+      flippingTime: 480,
+      usePortrait: true,
+      startPage: 0,
+      autoSize: false,
+      showCover: false,
+      mobileScrollSupport: false,
+      swipeDistance: 2,
+      clickEventForward: true,
+      useMouseEvents: true,
+      showPageCorners: true,
+      disableFlipByClick: false
     });
-    book.style.touchAction = "pan-y";
-    book.addEventListener("pointerdown", pointerDown, { passive: false });
-    book.addEventListener("pointermove", pointerMove, { passive: true });
-    book.addEventListener("pointerup", pointerUp);
-    book.addEventListener("pointercancel", pointerCancel);
-    book.addEventListener("lostpointercapture", pointerCancel);
 
-    const turn = (direction) => {
-      if (animating || gesture) return;
-      const page = pages[current];
-      const rect = book.getBoundingClientRect();
-      const startX = direction === "next" ? rect.width - 2 : 2;
-      gesture = { pointerId: -1, page, direction, startX, x: direction === "next" ? 0 : rect.width, y: rect.height * 0.5, width: rect.width, height: rect.height, progress: 1 };
-      paint();
-      finishGesture(true);
-    };
-    previous.addEventListener("click", () => turn("prev"));
-    next.addEventListener("click", () => turn("next"));
+    pageFlip.loadFromHTML(pages);
+    book.dataset.ready = "true";
 
     const pageTargets = { "#top": 0, "#approach": 1, "#doctor": 2, "#contact": 3 };
     book.addEventListener("click", (event) => {
@@ -323,25 +177,42 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       const target = pageTargets[link.getAttribute("href")];
       if (target === undefined) return;
       event.preventDefault();
-      if (target === current) return;
-      const direction = target > current ? "next" : "prev";
-      const distance = Math.abs(target - current);
-      if (distance === 1) turn(direction);
-      else {
-        current = target;
-        pages.forEach((p, i) => {
-          clearPageStyles(p);
-          p.style.display = i === current ? "block" : "none";
-        });
-        setControls();
-      }
+      if (target > pageFlip.getCurrentPageIndex()) pageFlip.flip(target, "top");
+      else if (target < pageFlip.getCurrentPageIndex()) pageFlip.flip(target, "top");
     });
 
-    setControls();
-    book.dataset.ready = "true";
+    previous.addEventListener("click", () => pageFlip.flipPrev("top"));
+    next.addEventListener("click", () => pageFlip.flipNext("top"));
+
+    const updateControls = (pageIndex) => {
+      const current = Math.max(0, Math.min(pages.length - 1, Number(pageIndex) || 0));
+      count.textContent = String(current + 1).padStart(2, "0") + " / " + String(pages.length).padStart(2, "0");
+      fill.style.width = (((current + 1) / pages.length) * 100).toFixed(2) + "%";
+      previous.disabled = current === 0;
+      next.disabled = current >= pages.length - 1;
+      book.dataset.currentPage = String(current);
+    };
+
+    pageFlip.on("flip", (event) => updateControls(event.data));
+    pageFlip.on("init", (event) => updateControls(event.data?.page ?? 0));
+    updateControls(0);
+
+    // Keep the live fold attached to the pointer on touchscreens and desktop.
+    // Recalculate using the actual book viewport after rotation or viewport changes.
+    const resizeBook = () => {
+      const width = Math.max(280, book.clientWidth);
+      const height = Math.max(420, book.clientHeight);
+      if (width > 0 && height > 0) pageFlip.update();
+    };
+    window.addEventListener("orientationchange", () => window.setTimeout(resizeBook, 180), { passive: true });
+    window.addEventListener("resize", resizeBook, { passive: true });
   };
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", startClinicBook, { once: true });
-  else startClinicBook();
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startClinicBook, { once: true });
+  } else {
+    startClinicBook();
+  }
 </script>
 
 <style>
@@ -392,29 +263,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     perspective: 1800px;
     touch-action: none;
     background: #efeee9;
-  }
-  .clinic-book-page {
-    position: absolute;
-    inset: 0;
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-    will-change: transform, box-shadow;
-  }
-  .clinic-book-page.is-turning::after {
-    content: "";
-    position: absolute;
-    z-index: 20;
-    top: 0;
-    bottom: 0;
-    left: var(--curl-x, 100%);
-    width: clamp(24px, 7vw, 88px);
-    pointer-events: none;
-    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.5) 35%, rgba(30,42,43,.2) 75%, rgba(30,42,43,0));
-    filter: blur(2px);
-    opacity: calc(.25 + var(--curl-progress, 0) * .7);
-  }
-  .clinic-book-page.is-under-page {
-    box-shadow: inset 0 0 34px rgba(24,35,37,.16);
   }
   .clinic-book-page {
     width: 100%;
