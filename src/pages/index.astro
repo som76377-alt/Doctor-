@@ -134,6 +134,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     const setupInjection = () => {
       const stage = document.querySelector(".injection-stage");
       if (!stage || stage.dataset.ready === "true") return;
+      // Mount the fixed effect directly on body so section overflow cannot clip it.
+      if (stage.parentElement !== document.body) document.body.appendChild(stage);
       stage.dataset.ready = "true";
 
       const startY = 18;
