@@ -7,6 +7,22 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   description="A calm, modern clinic website preview designed around clear information and patient-first care."
 >
   <main class="page-shell">
+      <div class="injection-stage" aria-hidden="true">
+        <div class="injection-trail"></div>
+        <svg class="injection-syringe" viewBox="0 0 80 240" role="presentation" focusable="false" aria-hidden="true">
+          <g class="syringe-lines">
+            <rect x="20" y="7" width="40" height="12" rx="4" />
+            <path d="M40 19 V51" />
+            <path d="M23 50 H57 M25 50 L28 58 M55 50 L52 58" />
+            <path d="M28 58 H52 V166 Q52 171 48 174 L44 183 H36 L32 174 Q28 171 28 166 Z" />
+            <path d="M31 64 H49" />
+            <path d="M32 78 H44 M32 90 H39 M32 102 H44 M32 114 H39 M32 126 H44 M32 138 H39 M32 150 H44 M32 162 H39" />
+            <path d="M34 183 L35 192 H45 L46 183" />
+            <path d="M40 192 V238" />
+          </g>
+        </svg>
+      </div>
+
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-photo" aria-hidden="true"></div>
       <div class="hero-shade" aria-hidden="true"></div>
@@ -46,21 +62,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </section>
 
     <section class="approach" id="approach">
-      <div class="injection-stage" aria-hidden="true">
-        <div class="injection-trail"></div>
-        <svg class="injection-syringe" viewBox="0 0 80 240" role="presentation" focusable="false" aria-hidden="true">
-          <g class="syringe-lines">
-            <rect x="20" y="7" width="40" height="12" rx="4" />
-            <path d="M40 19 V51" />
-            <path d="M23 50 H57 M25 50 L28 58 M55 50 L52 58" />
-            <path d="M28 58 H52 V166 Q52 171 48 174 L44 183 H36 L32 174 Q28 171 28 166 Z" />
-            <path d="M31 64 H49" />
-            <path d="M32 78 H44 M32 90 H39 M32 102 H44 M32 114 H39 M32 126 H44 M32 138 H39 M32 150 H44 M32 162 H39" />
-            <path d="M34 183 L35 192 H45 L46 183" />
-            <path d="M40 192 V238" />
-          </g>
-        </svg>
-      </div>
       <div class="approach-grid">
         <h2>Good care feels<br /><em>human.</em></h2>
         <div class="approach-copy">
@@ -214,7 +215,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     pointer-events: none;
     opacity: 0;
     transition: opacity .18s ease;
-    --injection-x: 50%;
+    --injection-x: 50vw;
     --injection-y: 18px;
     --trail-height: 18px;
   }
@@ -222,16 +223,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .injection-trail {
     position: absolute;
     top: 0;
-    left: var(--injection-x);
+    left: 50vw !important;
     width: 1.8px;
     height: var(--trail-height);
     background: #11110f;
-    transform: translateX(-50%);
+    transform: translateX(-50%) !important;
   }
   .injection-syringe {
     position: absolute;
     top: var(--injection-y);
-    left: var(--injection-x);
+    left: 50vw !important;
     display: block;
     width: 50px;
     height: 150px;
