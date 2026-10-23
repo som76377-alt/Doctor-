@@ -140,7 +140,7 @@ import PaperTurnCanvas from "../components/PaperTurnCanvas";
       if (!stage || !sourcePage || !underpage || !doctor || !contact || stage.dataset.ready === "true") return;
 
       const cloneSection = (section: HTMLElement): HTMLElement => {
-        const clone = section.cloneNode(true);
+        const clone = section.cloneNode(true) as HTMLElement;
         clone.removeAttribute("id");
         clone.setAttribute("aria-hidden", "true");
         clone.setAttribute("inert", "");
