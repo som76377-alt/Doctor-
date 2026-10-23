@@ -7,24 +7,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   description="A calm, modern clinic website preview designed around clear information and patient-first care."
 >
   <main class="page-shell">
-      <div class="injection-stage" aria-hidden="true">
-        <div class="paper-underpage"></div>
-        <div class="paper-tear-shadow"></div>
-        <div class="paper-flap paper-flap-left"></div>
-        <div class="paper-flap paper-flap-right"></div>
-        <svg class="injection-syringe" viewBox="0 0 80 240" role="presentation" focusable="false" aria-hidden="true">
-          <g class="syringe-lines">
-            <rect x="20" y="7" width="40" height="12" rx="4" />
-            <path d="M40 19 V51" />
-            <path d="M23 50 H57 M25 50 L28 58 M55 50 L52 58" />
-            <path d="M28 58 H52 V166 Q52 171 48 174 L44 183 H36 L32 174 Q28 171 28 166 Z" />
-            <path d="M31 64 H49" />
-            <path d="M32 78 H44 M32 90 H39 M32 102 H44 M32 114 H39 M32 126 H44 M32 138 H39 M32 150 H44 M32 162 H39" />
-            <path d="M34 183 L35 192 H45 L46 183" />
-            <path d="M40 192 V238" />
-          </g>
-        </svg>
-      </div>
+    <div id="clinic-book" class="clinic-book" aria-label="Clinic website pages">
+      <div class="clinic-book-page clinic-book-page--hero" data-density="soft">
+
 
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-photo" aria-hidden="true"></div>
@@ -63,7 +48,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </div>
       <div class="fabric" aria-hidden="true"><span></span><span></span><span></span></div>
     </section>
-
+      </div>
+      <div class="clinic-book-page clinic-book-page--approach" data-density="soft">
     <section class="approach" id="approach">
       <div class="approach-grid">
         <h2>Good care feels<br /><em>human.</em></h2>
@@ -91,8 +77,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </article>
       </div>
     </section>
-
-
+      </div>
+      <div class="clinic-book-page clinic-book-page--doctor" data-density="soft">
     <section class="doctor-feature" id="doctor" aria-labelledby="doctor-title">
       <div class="doctor-feature-inner">
         <p class="doctor-eyebrow"><span></span> MEET YOUR DOCTOR</p>
@@ -110,7 +96,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
       </div>
     </section>
-
+      </div>
+      <div class="clinic-book-page clinic-book-page--contact" data-density="soft">
     <section class="contact" id="contact">
       <div class="contact-grain" aria-hidden="true"></div>
       <div class="contact-inner">
@@ -126,123 +113,107 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         <a href="#top" class="back-top">Back to top ↑</a>
       </footer>
     </section>
+      </div>
+    </div>
+    <nav class="clinic-page-controls" aria-label="Page navigation">
+      <button class="page-control page-control--previous" type="button" aria-label="Turn to previous page" disabled>
+        <span aria-hidden="true">←</span><span class="page-control-label">Previous</span>
+      </button>
+      <div class="page-status" aria-live="polite">
+        <span class="page-status-count">01 / 04</span>
+        <span class="page-status-track"><span class="page-status-fill"></span></span>
+      </div>
+      <button class="page-control page-control--next" type="button" aria-label="Turn to next page">
+        <span class="page-control-label">Next</span><span aria-hidden="true">→</span>
+      </button>
+    </nav>
   </main>
 </BaseLayout>
 
 <script>
-  (() => {
-    const setupInjection = () => {
-      const stage = document.querySelector(".injection-stage");
-      const sourcePage = document.querySelector(".page-shell");
-      const hero = sourcePage?.querySelector(".hero");
-      const approach = sourcePage?.querySelector(".approach");
-      const doctor = sourcePage?.querySelector(".doctor-feature");
-      const contact = sourcePage?.querySelector(".contact");
-      if (!stage || !sourcePage || !hero || !approach || !doctor || !contact || stage.dataset.ready === "true") return;
+  import { PageFlip } from "page-flip";
 
-      const leftFlap = stage.querySelector(".paper-flap-left");
-      const rightFlap = stage.querySelector(".paper-flap-right");
-      const underpage = stage.querySelector(".paper-underpage");
-      if (!leftFlap || !rightFlap || !underpage) return;
+  const startClinicBook = () => {
+    const book = document.querySelector("#clinic-book");
+    const previous = document.querySelector(".page-control--previous");
+    const next = document.querySelector(".page-control--next");
+    const count = document.querySelector(".page-status-count");
+    const fill = document.querySelector(".page-status-fill");
+    if (!book || !previous || !next || !count || !fill || book.dataset.ready === "true") return;
 
-      const cloneSection = (section) => {
-        const clone = section.cloneNode(true);
-        clone.removeAttribute("id");
-        clone.setAttribute("aria-hidden", "true");
-        clone.setAttribute("inert", "");
-        clone.querySelectorAll("[id]").forEach(node => node.removeAttribute("id"));
-        clone.querySelectorAll("script, iframe, video, audio, form").forEach(node => node.remove());
-        clone.querySelectorAll("a, button, input, select, textarea, [tabindex]").forEach(node => {
-          node.setAttribute("tabindex", "-1");
-        });
-        return clone;
-      };
+    const pages = Array.from(book.querySelectorAll(".clinic-book-page"));
+    if (pages.length < 2) return;
 
-      const makeCopy = (host, className, sections) => {
-        const copy = document.createElement("div");
-        copy.className = className;
-        copy.setAttribute("aria-hidden", "true");
-        copy.setAttribute("inert", "");
-        sections.forEach(section => copy.appendChild(cloneSection(section)));
-        host.appendChild(copy);
-        return copy;
-      };
+    const pageFlip = new PageFlip(book, {
+      width: Math.max(320, window.innerWidth),
+      height: Math.max(520, window.innerHeight - 58),
+      size: "stretch",
+      minWidth: 280,
+      maxWidth: 1600,
+      minHeight: 480,
+      maxHeight: 1200,
+      drawShadow: true,
+      maxShadowOpacity: 0.58,
+      flippingTime: 820,
+      usePortrait: true,
+      startPage: 0,
+      autoSize: false,
+      showCover: false,
+      mobileScrollSupport: true,
+      swipeDistance: 36,
+      clickEventForward: true,
+      useMouseEvents: true,
+      showPageCorners: true,
+      disableFlipByClick: true
+    });
 
-      // The top sheet contains only the hero and approach; the unfurled back page is the doctor/contact design.
-      const leftCopy = makeCopy(leftFlap, "paper-copy", [hero, approach]);
-      const rightCopy = makeCopy(rightFlap, "paper-copy", [hero, approach]);
-      const backCopy = makeCopy(underpage, "paper-underpage-copy", [doctor, contact]);
+    pageFlip.loadFromHTML(pages);
+    book.dataset.ready = "true";
 
-      if (stage.parentElement !== document.body) document.body.appendChild(stage);
-      stage.dataset.ready = "true";
+    const pageTargets = { "#top": 0, "#approach": 1, "#doctor": 2, "#contact": 3 };
+    book.addEventListener("click", (event) => {
+      const link = event.target.closest("a[href^='#']");
+      if (!link) return;
+      const target = pageTargets[link.getAttribute("href")];
+      if (target === undefined) return;
+      event.preventDefault();
+      if (target > pageFlip.getCurrentPageIndex()) pageFlip.flip(target, "top");
+      else if (target < pageFlip.getCurrentPageIndex()) pageFlip.flip(target, "top");
+    });
 
-      let frame = 0;
-      let latestY = window.scrollY;
-      let viewportHeight = window.innerHeight;
-      let viewportWidth = window.innerWidth;
-      let sheetEnd = 1;
+    previous.addEventListener("click", () => pageFlip.flipPrev("top"));
+    next.addEventListener("click", () => pageFlip.flipNext("top"));
 
-      const measure = () => {
-        viewportHeight = window.innerHeight;
-        viewportWidth = window.innerWidth;
-        sheetEnd = Math.max(1, approach.getBoundingClientRect().bottom + window.scrollY);
-      };
-
-      const draw = () => {
-        frame = 0;
-        const progress = Math.min(1, Math.max(0, latestY / sheetEnd));
-        const syringeY = 18 + progress * Math.max(0, viewportHeight - 168);
-        const tearHeight = Math.min(viewportHeight, syringeY + 150);
-        const tearBottom = Math.max(0, viewportHeight - tearHeight);
-
-        // Rotate back around the centre seam. No lateral translation: the opening comes from the fold.
-        const rawFold = Math.min(1, Math.max(0, (progress - 0.015) / 0.96));
-        const foldProgress = rawFold * rawFold * (3 - 2 * rawFold);
-        const foldAngle = foldProgress * (viewportWidth <= 650 ? 86 : 88);
-        const curl = foldProgress * 2.5;
-        // Keep each outer page edge visually anchored as its half turns edge-on.
-        const foldPush = (viewportWidth / 2) * (1 - Math.cos(foldAngle * Math.PI / 180));
-
-        stage.style.setProperty("--injection-y", syringeY.toFixed(1) + "px");
-        stage.style.setProperty("--tear-bottom", tearBottom.toFixed(1) + "px");
-        stage.style.setProperty("--fold-angle", foldAngle.toFixed(2) + "deg");
-        stage.style.setProperty("--fold-curl", curl.toFixed(2) + "deg");
-        stage.style.setProperty("--fold-push", foldPush.toFixed(1) + "px");
-
-        // Follow only the live scroll position. DOM measurements are cached until resize.
-        const pageOffset = -latestY;
-        leftCopy.style.transform = "translate3d(0," + pageOffset.toFixed(1) + "px,0)";
-        rightCopy.style.transform = "translate3d(0," + pageOffset.toFixed(1) + "px,0)";
-        stage.classList.toggle("is-active", latestY > 12 && latestY < sheetEnd - 1);
-      };
-
-      const onScroll = () => {
-        latestY = window.scrollY;
-        if (!frame) frame = requestAnimationFrame(draw);
-      };
-      const onResize = () => {
-        measure();
-        latestY = window.scrollY;
-        if (!frame) frame = requestAnimationFrame(draw);
-      };
-      window.addEventListener("scroll", onScroll, { passive: true });
-      window.addEventListener("resize", onResize, { passive: true });
-      measure();
-      draw();
+    const updateControls = (pageIndex) => {
+      const current = Math.max(0, Math.min(pages.length - 1, Number(pageIndex) || 0));
+      count.textContent = String(current + 1).padStart(2, "0") + " / " + String(pages.length).padStart(2, "0");
+      fill.style.width = (((current + 1) / pages.length) * 100).toFixed(2) + "%";
+      previous.disabled = current === 0;
+      next.disabled = current >= pages.length - 1;
+      book.dataset.currentPage = String(current);
     };
 
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", setupInjection, { once: true });
-    } else {
-      setupInjection();
-    }
-  })();
+    pageFlip.on("flip", (event) => updateControls(event.data));
+    pageFlip.on("init", (event) => updateControls(event.data?.page ?? 0));
+    updateControls(0);
+
+    // The library measures its own pages; ask it to recalculate after device rotation.
+    window.addEventListener("orientationchange", () => {
+      window.setTimeout(() => pageFlip.update(), 180);
+    }, { passive: true });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startClinicBook, { once: true });
+  } else {
+    startClinicBook();
+  }
 </script>
 
 <style>
   :global(*) { box-sizing: border-box; }
-  :global(html) { scroll-behavior: smooth; background: #efeee9; }
-  :global(body) { margin: 0; min-width: 320px; color: #1e2c31; font-family: Inter, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  :global(html) { scroll-behavior: auto; background: #efeee9; height: 100%; overflow: hidden; }
+  :global(body) { margin: 0; min-width: 320px; height: 100%; overflow: hidden; overscroll-behavior: none; color: #1e2c31; font-family: Inter, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
   :global(a) { color: inherit; }
   .page-shell { overflow: hidden; background: #efeee9; }
   .hero { position: relative; isolation: isolate; display: flex; min-height: clamp(620px, 84svh, 820px); flex-direction: column; overflow: hidden; color: #f8f7f2; background: #efeee9; }
@@ -276,165 +247,174 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .location-dot { width: 6px; height: 6px; border-radius: 50%; background: #9a8b70; box-shadow: 0 0 0 4px rgba(154,139,112,.15); }
   .hero-index { margin: 0; color: rgba(30,44,49,.68); font-size: 8px; letter-spacing: .14em; }
   .hero-index span { color: #1e2c31; }
-  .injection-stage {
+  .page-shell { width: 100%; height: 100dvh; overflow: hidden; background: #efeee9; }
+  .clinic-book {
+    position: relative;
+    width: 100%;
+    height: calc(100dvh - 58px);
+    min-height: 0;
+    margin: 0 auto;
+    overflow: hidden;
+    perspective: 1800px;
+    touch-action: none;
+    background: #efeee9;
+  }
+  .clinic-book-page {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    background: #efeee9;
+    color: #1e2c31;
+  }
+  .clinic-book-page--hero .hero { width: 100%; height: 100%; min-height: 100%; }
+  .clinic-book-page--hero .hero-content { padding-top: 30px; padding-bottom: 34px; }
+  .clinic-book-page--approach .approach {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(28px, 5vh, 56px) clamp(24px, 6.5vw, 96px);
+  }
+  .clinic-book-page--approach .approach-grid { gap: 5%; margin-top: 22px; }
+  .clinic-book-page--approach .values { margin-top: clamp(24px, 4vh, 48px); }
+  .clinic-book-page--approach .value { min-height: 0; padding-top: 18px; padding-bottom: 14px; }
+  .clinic-book-page--doctor .doctor-feature {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 32px clamp(24px, 6vw, 76px);
+  }
+  .clinic-book-page--doctor .doctor-feature-inner {
+    display: grid;
+    width: min(100%, 1060px);
+    grid-template-columns: minmax(150px, .72fr) minmax(0, 1.28fr);
+    gap: clamp(18px, 4vw, 54px);
+    align-items: center;
+    text-align: left;
+  }
+  .clinic-book-page--doctor .doctor-eyebrow { grid-column: 1 / -1; margin: 0; }
+  .clinic-book-page--doctor .doctor-feature-portrait {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    height: min(44vh, 340px);
+    margin: 0;
+  }
+  .clinic-book-page--doctor .doctor-feature-copy { grid-column: 2; grid-row: 2; margin: 0; }
+  .clinic-book-page--doctor .doctor-description,
+  .clinic-book-page--doctor .doctor-demo-note { margin-left: 0; margin-right: 0; }
+  .clinic-book-page--contact .contact {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .clinic-book-page--contact .contact-inner { padding: clamp(38px, 6vh, 76px) clamp(24px, 8vw, 110px); }
+  .clinic-book-page--contact .footer { padding-top: 16px; padding-bottom: 16px; }
+
+  .clinic-page-controls {
     position: fixed;
-    z-index: 80;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-    pointer-events: none;
-    opacity: 0;
-    isolation: isolate;
-    perspective: 1200px;
-    perspective-origin: 50% 48%;
-    transform-style: preserve-3d;
-    transition: opacity .12s linear;
-    --injection-y: 18px;
-    --tear-bottom: calc(100dvh - 168px);
-    --fold-angle: 0deg;
-    --fold-curl: 0deg;
-    --fold-push: 0px;
-    --paper-edge: 8px;
-  }
-  .injection-stage.is-active { opacity: 1; }
-
-  /* Only the already-torn region is covered by the second page. */
-  .paper-underpage {
-    position: absolute;
-    z-index: 0;
-    inset: 0;
-    overflow: hidden;
-    clip-path: inset(0 0 var(--tear-bottom) 0);
-    background: #efeee9;
-    contain: paint;
-  }
-  .paper-underpage-copy {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    margin: 0;
-    pointer-events: none;
-    background: #efeee9;
-  }
-  .paper-underpage-copy > .doctor-feature,
-  .paper-underpage-copy > .contact {
-    width: 100%;
-    max-width: none;
-  }
-
-  .paper-flap {
-    position: absolute;
-    z-index: 3;
-    top: 0;
-    width: 50vw;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-    clip-path: inset(0 0 var(--tear-bottom) 0);
-    background: #efeee9;
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-    will-change: transform;
-    border: 0;
-  }
-  .paper-flap-left {
-    left: 0;
-    transform-origin: 100% 50%;
-    transform: translateX(calc(0px - var(--fold-push))) rotateY(calc(0deg - var(--fold-angle))) rotateX(calc(0deg - var(--fold-curl)));
-  }
-  .paper-flap-right {
-    left: 50vw;
-    transform-origin: 0 50%;
-    transform: translateX(var(--fold-push)) rotateY(var(--fold-angle)) rotateX(var(--fold-curl));
-  }
-  .paper-copy {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    margin: 0;
-    background: #efeee9;
-    pointer-events: none;
-    will-change: transform;
-    backface-visibility: hidden;
-  }
-  .paper-copy > .hero,
-  .paper-copy > .approach {
-    width: 100%;
-    max-width: none;
-  }
-  .paper-flap-right .paper-copy { left: -50vw; }
-  .paper-copy a,
-  .paper-copy button { pointer-events: none !important; }
-
-  /* Thin paper edge, soft curl highlight and a narrow centre incision — no jagged zipper teeth. */
-  .paper-flap::before,
-  .paper-flap::after {
-    content: "";
-    position: absolute;
-    z-index: 5;
-    top: 0;
-    bottom: 0;
-    pointer-events: none;
-  }
-  .paper-flap-left::before {
+    z-index: 1000;
     right: 0;
-    width: var(--paper-edge);
-    background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(177,164,143,.28) 50%, rgba(54,45,34,.30));
-    box-shadow: 1px 0 1px rgba(255,255,255,.78) inset;
-  }
-  .paper-flap-right::before {
+    bottom: 0;
     left: 0;
-    width: var(--paper-edge);
-    background: linear-gradient(90deg, rgba(54,45,34,.30), rgba(177,164,143,.28) 50%, rgba(255,255,255,.04));
-    box-shadow: -1px 0 1px rgba(255,255,255,.78) inset;
+    display: flex;
+    height: 58px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 0 clamp(16px, 4vw, 48px);
+    border-top: 1px solid rgba(30,44,49,.12);
+    background: rgba(239,238,233,.96);
+    color: #263a40;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
-  .paper-flap::after {
-    inset: 0;
-    opacity: .5;
-    background: linear-gradient(180deg, rgba(255,255,255,.09), transparent 28%, rgba(100,85,64,.045) 100%);
+  .page-control {
+    display: inline-flex;
+    min-width: 84px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 2px;
+    border: 0;
+    border-radius: 0;
+    color: #263a40;
+    background: transparent;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
   }
-  .paper-tear-shadow {
-    position: absolute;
-    z-index: 2;
-    top: 0;
-    left: 50vw;
-    width: 8px;
-    height: 100vh;
-    height: 100dvh;
-    clip-path: inset(0 0 var(--tear-bottom) 0);
-    transform: translateX(-50%);
-    background: linear-gradient(90deg, rgba(28,23,17,.24), rgba(28,23,17,.06) 35%, transparent 50%, rgba(28,23,17,.06) 65%, rgba(28,23,17,.24));
-  }
-  .injection-syringe {
-    position: absolute;
-    z-index: 10;
-    top: var(--injection-y);
-    left: 50vw;
-    display: block;
-    width: 50px;
-    height: 150px;
-    overflow: visible;
-    transform: translateX(-50%);
-    color: #11110f;
-  }
-  .syringe-lines {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
-  }
+  .page-control span[aria-hidden="true"] { font-size: 19px; line-height: 1; }
+  .page-control:disabled { opacity: .28; cursor: default; }
+  .page-control:focus-visible { outline: 2px solid #8e8066; outline-offset: 2px; }
+  .page-status { display: grid; min-width: 76px; gap: 6px; justify-items: center; }
+  .page-status-count { color: #5b696b; font-size: 9px; font-weight: 700; letter-spacing: .16em; font-variant-numeric: tabular-nums; }
+  .page-status-track { display: block; width: 76px; height: 2px; overflow: hidden; background: #d8d4ca; }
+  .page-status-fill { display: block; width: 25%; height: 100%; background: #8d8067; transition: width .28s ease; }
+  .clinic-book .stf__parent { margin: 0 auto; }
+  .clinic-book-page .hero,
+  .clinic-book-page .approach,
+  .clinic-book-page .doctor-feature,
+  .clinic-book-page .contact { box-sizing: border-box; }
+
   @media (max-width: 650px) {
-    .injection-stage { perspective: 950px; --paper-edge: 6px; }
-    .injection-syringe { width: 50px; height: 150px; }
+    .clinic-book-page--hero .hero { min-height: 100%; }
+    .clinic-book-page--hero .hero-content { padding: 24px 24px 28px; }
+    .clinic-book-page--hero h1 { font-size: clamp(48px, 14vw, 74px); }
+    .clinic-book-page--hero .hero-copy { max-width: 290px; font-size: 12px; line-height: 1.6; }
+    .clinic-book-page--hero .topbar { padding: 14px 20px; }
+    .clinic-book-page--hero .hero-bottom { padding: 0 20px 14px; }
+    .clinic-book-page--approach .approach { padding: 28px 23px 24px; }
+    .clinic-book-page--approach .approach-grid { grid-template-columns: 1fr; gap: 12px; margin-top: 16px; }
+    .clinic-book-page--approach h2 { font-size: clamp(37px, 10vw, 48px); }
+    .clinic-book-page--approach .approach-copy { padding-top: 0; }
+    .clinic-book-page--approach .approach-copy .approach-lead { margin-bottom: 8px; font-size: 17px; line-height: 1.35; }
+    .clinic-book-page--approach .approach-copy p { margin-top: 8px; margin-bottom: 8px; font-size: 11px; line-height: 1.55; }
+    .clinic-book-page--approach .underlined-link { margin-top: 4px; font-size: 10px; }
+    .clinic-book-page--approach .values { grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 19px; }
+    .clinic-book-page--approach .value { display: flex; flex-direction: column; gap: 7px; padding: 12px 8px 8px 0; }
+    .clinic-book-page--approach .value + .value { padding-left: 9px; border-left: 1px solid #d4d2c9; }
+    .clinic-book-page--approach .value h3 { margin-bottom: 5px; font-size: 11px; }
+    .clinic-book-page--approach .value p { font-size: 9px; line-height: 1.45; }
+    .clinic-book-page--approach .value-mark { display: none; }
+    .clinic-book-page--doctor .doctor-feature { padding: 22px 22px 18px; }
+    .clinic-book-page--doctor .doctor-feature-inner { grid-template-columns: 1fr; gap: 7px; text-align: center; }
+    .clinic-book-page--doctor .doctor-eyebrow { justify-content: center; font-size: 8px; letter-spacing: .15em; }
+    .clinic-book-page--doctor .doctor-feature-portrait { grid-column: 1; grid-row: 2; width: 145px; height: 128px; margin: 0 auto; }
+    .clinic-book-page--doctor .doctor-feature-copy { grid-column: 1; grid-row: 3; margin-top: 0; }
+    .clinic-book-page--doctor .doctor-overline { margin-bottom: 8px; font-size: 8px; }
+    .clinic-book-page--doctor .doctor-feature h2 { font-size: 38px; }
+    .clinic-book-page--doctor .doctor-specialty { margin-top: 8px; font-size: 11px; line-height: 1.4; }
+    .clinic-book-page--doctor .doctor-qualifications { margin-top: 7px; font-size: 9px; }
+    .clinic-book-page--doctor .doctor-description { margin-top: 12px; font-size: 11px; line-height: 1.5; }
+    .clinic-book-page--doctor .doctor-demo-note { margin-top: 8px; font-size: 9px; line-height: 1.45; }
+    .clinic-book-page--doctor .doctor-more { margin-top: 11px; font-size: 10px; }
+    .clinic-book-page--contact .contact-inner { padding: 34px 24px 27px; }
+    .clinic-book-page--contact .contact h2 { font-size: clamp(40px, 11vw, 57px); }
+    .clinic-book-page--contact .contact-copy { font-size: 11px; line-height: 1.6; }
+    .clinic-book-page--contact .footer { gap: 10px; padding-right: 18px; padding-left: 18px; }
+    .page-control { min-width: 62px; gap: 5px; font-size: 10px; }
+    .page-status-track { width: 56px; }
+    .page-status { min-width: 56px; }
+    .clinic-page-controls { gap: 8px; padding-right: 14px; padding-left: 14px; }
+  }
+  @media (max-height: 650px) {
+    .clinic-book-page--hero .hero-content { padding-top: 16px; padding-bottom: 18px; }
+    .clinic-book-page--approach .approach { padding-top: 17px; padding-bottom: 16px; }
+    .clinic-book-page--approach .values { margin-top: 14px; }
+    .clinic-book-page--doctor .doctor-feature { padding-top: 12px; padding-bottom: 12px; }
+    .clinic-book-page--doctor .doctor-feature-portrait { height: 110px; }
+    .clinic-book-page--doctor .doctor-description { margin-top: 7px; }
+    .clinic-book-page--doctor .doctor-demo-note { margin-top: 5px; }
+    .clinic-book-page--contact .contact-inner { padding-top: 24px; padding-bottom: 20px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .injection-stage { transition: none; }
+    .page-status-fill { transition: none; }
   }
 
   .fabric { position: absolute; z-index: -1; right: -10%; bottom: -55px; left: -10%; height: 100px; opacity: .5; }
