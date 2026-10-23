@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import PaperTurnCanvas from "../components/PaperTurnCanvas";
 ---
 
 <BaseLayout
@@ -10,8 +11,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <div class="injection-stage" aria-hidden="true">
         <div class="paper-underpage"></div>
         <div class="paper-tear-shadow"></div>
-        <div class="paper-flap paper-flap-left"></div>
-        <div class="paper-flap paper-flap-right"></div>
+        <PaperTurnCanvas client:only="react" />
         <svg class="injection-syringe" viewBox="0 0 80 240" role="presentation" focusable="false" aria-hidden="true">
           <g class="syringe-lines">
             <rect x="20" y="7" width="40" height="12" rx="4" />
@@ -134,16 +134,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     const setupInjection = () => {
       const stage = document.querySelector(".injection-stage");
       const sourcePage = document.querySelector(".page-shell");
-      const hero = sourcePage?.querySelector(".hero");
-      const approach = sourcePage?.querySelector(".approach");
+      const underpage = stage?.querySelector(".paper-underpage");
       const doctor = sourcePage?.querySelector(".doctor-feature");
       const contact = sourcePage?.querySelector(".contact");
-      if (!stage || !sourcePage || !hero || !approach || !doctor || !contact || stage.dataset.ready === "true") return;
-
-      const leftFlap = stage.querySelector(".paper-flap-left");
-      const rightFlap = stage.querySelector(".paper-flap-right");
-      const underpage = stage.querySelector(".paper-underpage");
-      if (!leftFlap || !rightFlap || !underpage) return;
+      if (!stage || !sourcePage || !underpage || !doctor || !contact || stage.dataset.ready === "true") return;
 
       const cloneSection = (section) => {
         const clone = section.cloneNode(true);
@@ -158,77 +152,29 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         return clone;
       };
 
-      const makeCopy = (host, className, sections) => {
-        const copy = document.createElement("div");
-        copy.className = className;
-        copy.setAttribute("aria-hidden", "true");
-        copy.setAttribute("inert", "");
-        sections.forEach(section => copy.appendChild(cloneSection(section)));
-        host.appendChild(copy);
-        return copy;
-      };
-
-      // The top sheet contains only the hero and approach; the unfurled back page is the doctor/contact design.
-      const leftCopy = makeCopy(leftFlap, "paper-copy", [hero, approach]);
-      const rightCopy = makeCopy(rightFlap, "paper-copy", [hero, approach]);
-      const backCopy = makeCopy(underpage, "paper-underpage-copy", [doctor, contact]);
+      // The back sheet uses the real next sections, with their original colors, images and typography.
+      const backCopy = document.createElement("div");
+      backCopy.className = "paper-underpage-copy";
+      backCopy.setAttribute("aria-hidden", "true");
+      backCopy.setAttribute("inert", "");
+      Object.assign(backCopy.style, {
+        position: "absolute",
+        top: "0",
+        left: "0",
+        width: "100vw",
+        margin: "0",
+        pointerEvents: "none",
+        background: "#efeee9"
+      });
+      const doctorCopy = cloneSection(doctor);
+      const contactCopy = cloneSection(contact);
+      Object.assign(doctorCopy.style, { width: "100%", maxWidth: "none" });
+      Object.assign(contactCopy.style, { width: "100%", maxWidth: "none" });
+      backCopy.append(doctorCopy, contactCopy);
+      underpage.appendChild(backCopy);
 
       if (stage.parentElement !== document.body) document.body.appendChild(stage);
       stage.dataset.ready = "true";
-
-      let frame = 0;
-      let latestY = window.scrollY;
-      let viewportHeight = window.innerHeight;
-      let viewportWidth = window.innerWidth;
-      let sheetEnd = 1;
-
-      const measure = () => {
-        viewportHeight = window.innerHeight;
-        viewportWidth = window.innerWidth;
-        sheetEnd = Math.max(1, approach.getBoundingClientRect().bottom + window.scrollY);
-      };
-
-      const draw = () => {
-        frame = 0;
-        const progress = Math.min(1, Math.max(0, latestY / sheetEnd));
-        const syringeY = 18 + progress * Math.max(0, viewportHeight - 168);
-        const tearHeight = Math.min(viewportHeight, syringeY + 150);
-        const tearBottom = Math.max(0, viewportHeight - tearHeight);
-
-        // Rotate back around the centre seam. No lateral translation: the opening comes from the fold.
-        const rawFold = Math.min(1, Math.max(0, (progress - 0.015) / 0.96));
-        const foldProgress = rawFold * rawFold * (3 - 2 * rawFold);
-        const foldAngle = foldProgress * (viewportWidth <= 650 ? 86 : 88);
-        const curl = foldProgress * 2.5;
-        // Keep each outer page edge visually anchored as its half turns edge-on.
-        const foldPush = (viewportWidth / 2) * (1 - Math.cos(foldAngle * Math.PI / 180));
-
-        stage.style.setProperty("--injection-y", syringeY.toFixed(1) + "px");
-        stage.style.setProperty("--tear-bottom", tearBottom.toFixed(1) + "px");
-        stage.style.setProperty("--fold-angle", foldAngle.toFixed(2) + "deg");
-        stage.style.setProperty("--fold-curl", curl.toFixed(2) + "deg");
-        stage.style.setProperty("--fold-push", foldPush.toFixed(1) + "px");
-
-        // Follow only the live scroll position. DOM measurements are cached until resize.
-        const pageOffset = -latestY;
-        leftCopy.style.transform = "translate3d(0," + pageOffset.toFixed(1) + "px,0)";
-        rightCopy.style.transform = "translate3d(0," + pageOffset.toFixed(1) + "px,0)";
-        stage.classList.toggle("is-active", latestY > 12 && latestY < sheetEnd - 1);
-      };
-
-      const onScroll = () => {
-        latestY = window.scrollY;
-        if (!frame) frame = requestAnimationFrame(draw);
-      };
-      const onResize = () => {
-        measure();
-        latestY = window.scrollY;
-        if (!frame) frame = requestAnimationFrame(draw);
-      };
-      window.addEventListener("scroll", onScroll, { passive: true });
-      window.addEventListener("resize", onResize, { passive: true });
-      measure();
-      draw();
     };
 
     if (document.readyState === "loading") {
@@ -293,10 +239,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     transition: opacity .12s linear;
     --injection-y: 18px;
     --tear-bottom: calc(100dvh - 168px);
-    --fold-angle: 0deg;
-    --fold-curl: 0deg;
-    --fold-push: 0px;
-    --paper-edge: 8px;
   }
   .injection-stage.is-active { opacity: 1; }
 
@@ -310,7 +252,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     background: #efeee9;
     contain: paint;
   }
-  .paper-underpage-copy {
+  :global(.paper-underpage-copy) {
     position: absolute;
     top: 0;
     left: 0;
@@ -319,83 +261,28 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     pointer-events: none;
     background: #efeee9;
   }
-  .paper-underpage-copy > .doctor-feature,
-  .paper-underpage-copy > .contact {
+  :global(.paper-underpage-copy > .doctor-feature),
+  :global(.paper-underpage-copy > .contact) {
     width: 100%;
     max-width: none;
   }
-
-  .paper-flap {
+  :global(.paper-turn-window) {
     position: absolute;
     z-index: 3;
-    top: 0;
-    width: 50vw;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-    clip-path: inset(0 0 var(--tear-bottom) 0);
-    background: #efeee9;
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-    will-change: transform;
-    border: 0;
-  }
-  .paper-flap-left {
-    left: 0;
-    transform-origin: 100% 50%;
-    transform: translateX(calc(0px - var(--fold-push))) rotateY(calc(0deg - var(--fold-angle))) rotateX(calc(0deg - var(--fold-curl)));
-  }
-  .paper-flap-right {
-    left: 50vw;
-    transform-origin: 0 50%;
-    transform: translateX(var(--fold-push)) rotateY(var(--fold-angle)) rotateX(var(--fold-curl));
-  }
-  .paper-copy {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    margin: 0;
-    background: #efeee9;
-    pointer-events: none;
-    will-change: transform;
-    backface-visibility: hidden;
-  }
-  .paper-copy > .hero,
-  .paper-copy > .approach {
-    width: 100%;
-    max-width: none;
-  }
-  .paper-flap-right .paper-copy { left: -50vw; }
-  .paper-copy a,
-  .paper-copy button { pointer-events: none !important; }
-
-  /* Thin paper edge, soft curl highlight and a narrow centre incision — no jagged zipper teeth. */
-  .paper-flap::before,
-  .paper-flap::after {
-    content: "";
-    position: absolute;
-    z-index: 5;
-    top: 0;
-    bottom: 0;
-    pointer-events: none;
-  }
-  .paper-flap-left::before {
-    right: 0;
-    width: var(--paper-edge);
-    background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(177,164,143,.28) 50%, rgba(54,45,34,.30));
-    box-shadow: 1px 0 1px rgba(255,255,255,.78) inset;
-  }
-  .paper-flap-right::before {
-    left: 0;
-    width: var(--paper-edge);
-    background: linear-gradient(90deg, rgba(54,45,34,.30), rgba(177,164,143,.28) 50%, rgba(255,255,255,.04));
-    box-shadow: -1px 0 1px rgba(255,255,255,.78) inset;
-  }
-  .paper-flap::after {
     inset: 0;
-    opacity: .5;
-    background: linear-gradient(180deg, rgba(255,255,255,.09), transparent 28%, rgba(100,85,64,.045) 100%);
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    clip-path: inset(0 0 var(--tear-bottom) 0);
+    -webkit-clip-path: inset(0 0 var(--tear-bottom) 0);
+    background: transparent;
+  }
+  :global(.paper-turn-window canvas) {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
   }
   .paper-tear-shadow {
     position: absolute;
@@ -430,7 +317,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     vector-effect: non-scaling-stroke;
   }
   @media (max-width: 650px) {
-    .injection-stage { perspective: 950px; --paper-edge: 6px; }
     .injection-syringe { width: 50px; height: 150px; }
   }
   @media (prefers-reduced-motion: reduce) {
