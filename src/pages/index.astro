@@ -129,7 +129,7 @@ import PaperTurnCanvas from "../components/PaperTurnCanvas";
   </main>
 </BaseLayout>
 
-<script lang="ts">
+<script>
   (() => {
     const setupInjection = () => {
       const stage = document.querySelector<HTMLElement>(".injection-stage");
@@ -139,14 +139,14 @@ import PaperTurnCanvas from "../components/PaperTurnCanvas";
       const contact = sourcePage?.querySelector<HTMLElement>(".contact");
       if (!stage || !sourcePage || !underpage || !doctor || !contact || stage.dataset.ready === "true") return;
 
-      const cloneSection = (section = document.createElement("div")) => {
+      const cloneSection = (section: HTMLElement): HTMLElement => {
         const clone = section.cloneNode(true);
         clone.removeAttribute("id");
         clone.setAttribute("aria-hidden", "true");
         clone.setAttribute("inert", "");
-        clone.querySelectorAll<HTMLElement>("[id]").forEach(node => node.removeAttribute("id"));
-        clone.querySelectorAll("script, iframe, video, audio, form").forEach(node => node.remove());
-        clone.querySelectorAll<HTMLElement>("a, button, input, select, textarea, [tabindex]").forEach(node => {
+        clone.querySelectorAll<HTMLElement>("[id]").forEach((node: HTMLElement) => node.removeAttribute("id"));
+        clone.querySelectorAll("script, iframe, video, audio, form").forEach((node: Element) => node.remove());
+        clone.querySelectorAll<HTMLElement>("a, button, input, select, textarea, [tabindex]").forEach((node: HTMLElement) => {
           node.setAttribute("tabindex", "-1");
         });
         return clone;
