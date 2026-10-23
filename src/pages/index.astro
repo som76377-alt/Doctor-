@@ -9,10 +9,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   <main class="page-shell">
       <div class="injection-stage" aria-hidden="true">
         <div class="paper-underpage"></div>
-        <div class="paper-base"></div>
+        <div class="paper-tear-shadow"></div>
         <div class="paper-flap paper-flap-left"></div>
         <div class="paper-flap paper-flap-right"></div>
-        <div class="paper-tear-shadow"></div>
         <svg class="injection-syringe" viewBox="0 0 80 240" role="presentation" focusable="false" aria-hidden="true">
           <g class="syringe-lines">
             <rect x="20" y="7" width="40" height="12" rx="4" />
@@ -135,81 +134,89 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     const setupInjection = () => {
       const stage = document.querySelector(".injection-stage");
       const sourcePage = document.querySelector(".page-shell");
-      if (!stage || !sourcePage || stage.dataset.ready === "true") return;
+      const hero = sourcePage?.querySelector(".hero");
+      const approach = sourcePage?.querySelector(".approach");
+      if (!stage || !sourcePage || !hero || !approach || stage.dataset.ready === "true") return;
 
-      const underpage = stage.querySelector(".paper-underpage");
-      const base = stage.querySelector(".paper-base");
       const leftFlap = stage.querySelector(".paper-flap-left");
       const rightFlap = stage.querySelector(".paper-flap-right");
-      if (!underpage || !base || !leftFlap || !rightFlap) return;
+      if (!leftFlap || !rightFlap) return;
 
-      // These are full DOM copies of the visible webpage, not isolated decorative strips.
-      const makePageCopy = (host, role) => {
-        const copy = sourcePage.cloneNode(true);
-        copy.classList.add("paper-copy");
-        copy.dataset.paperRole = role;
+      // Only the top sheet is copied: doctor/contact remain normal content after it.
+      const makeTopPageCopy = (host, side) => {
+        const copy = document.createElement("div");
+        copy.className = "paper-copy";
+        copy.dataset.paperRole = side;
         copy.setAttribute("aria-hidden", "true");
         copy.setAttribute("inert", "");
-        copy.querySelectorAll(".injection-stage, script, iframe, video, audio").forEach(node => node.remove());
-        copy.removeAttribute("id");
-        copy.querySelectorAll("[id]").forEach(node => node.removeAttribute("id"));
-        copy.querySelectorAll("a, button, input, select, textarea, [tabindex]").forEach(node => {
-          node.setAttribute("tabindex", "-1");
+        [hero, approach].forEach(section => {
+          const clone = section.cloneNode(true);
+          clone.removeAttribute("id");
+          clone.querySelectorAll("[id]").forEach(node => node.removeAttribute("id"));
+          clone.querySelectorAll("script, iframe, video, audio, form").forEach(node => node.remove());
+          clone.querySelectorAll("a, button, input, select, textarea, [tabindex]").forEach(node => {
+            node.setAttribute("tabindex", "-1");
+          });
+          copy.appendChild(clone);
         });
         host.appendChild(copy);
         return copy;
       };
 
-      const underCopy = makePageCopy(underpage, "under");
-      const baseCopy = makePageCopy(base, "base");
-      const leftCopy = makePageCopy(leftFlap, "left");
-      const rightCopy = makePageCopy(rightFlap, "right");
-
-      // Move the overlay to body so no section's overflow can crop the 3D fold.
+      const leftCopy = makeTopPageCopy(leftFlap, "left");
+      const rightCopy = makeTopPageCopy(rightFlap, "right");
       if (stage.parentElement !== document.body) document.body.appendChild(stage);
       stage.dataset.ready = "true";
 
-      const startY = 18;
-      const syringeHeight = 150;
       let frame = 0;
       let latestY = window.scrollY;
+      let viewportHeight = window.innerHeight;
+      let viewportWidth = window.innerWidth;
+      let sheetEnd = Math.max(1, approach.getBoundingClientRect().bottom + window.scrollY);
+
+      const measure = () => {
+        viewportHeight = window.innerHeight;
+        viewportWidth = window.innerWidth;
+        sheetEnd = Math.max(1, approach.getBoundingClientRect().bottom + window.scrollY);
+      };
 
       const draw = () => {
         frame = 0;
-        const viewportHeight = window.innerHeight;
-        const maxScroll = Math.max(1, document.documentElement.scrollHeight - viewportHeight);
-        const progress = Math.min(1, Math.max(0, latestY / maxScroll));
-        const travel = Math.max(0, viewportHeight - syringeHeight - startY - 18);
-        const syringeY = startY + progress * travel;
-        const tearHeight = Math.min(viewportHeight, syringeY + syringeHeight);
-        const underOffset = Math.round(viewportHeight * 0.72);
-        const openingProgress = Math.min(1, Math.max(0, (syringeY - startY) / (viewportHeight * 0.62)));
-        const foldDistance = openingProgress * Math.min(window.innerWidth <= 650 ? 92 : 190, window.innerWidth * 0.22);
-        const foldAngle = openingProgress * (window.innerWidth <= 650 ? 17 : 22);
+        const pageProgress = Math.min(1, Math.max(0, latestY / sheetEnd));
+        const syringeY = 18 + pageProgress * Math.max(0, viewportHeight - 168);
+        const tearHeight = Math.min(viewportHeight, syringeY + 150);
+        const rawFold = Math.min(1, Math.max(0, (pageProgress - 0.025) / 0.90));
+        const foldProgress = rawFold * rawFold * (3 - 2 * rawFold);
+        const foldAngle = foldProgress * (viewportWidth <= 650 ? 58 : 62);
+        const foldSeparation = foldProgress * (viewportWidth <= 650 ? 12 : 20);
+        const foldLift = foldProgress * 16;
 
         stage.style.setProperty("--injection-y", syringeY.toFixed(1) + "px");
         stage.style.setProperty("--tear-height", tearHeight.toFixed(1) + "px");
-        stage.style.setProperty("--fold-distance", foldDistance.toFixed(1) + "px");
         stage.style.setProperty("--fold-angle", foldAngle.toFixed(2) + "deg");
+        stage.style.setProperty("--fold-separation", foldSeparation.toFixed(1) + "px");
+        stage.style.setProperty("--fold-lift", foldLift.toFixed(1) + "px");
 
-        // Keep all front-paper layers locked to the current page scroll.
-        underCopy.style.transform = "translate3d(0," + (-latestY - underOffset).toFixed(1) + "px,0)";
-        baseCopy.style.transform = "translate3d(0," + (-latestY - tearHeight).toFixed(1) + "px,0)";
-        leftCopy.style.transform = "translate3d(0," + (-latestY).toFixed(1) + "px,0)";
-        rightCopy.style.transform = "translate3d(0," + (-latestY).toFixed(1) + "px,0)";
-
-        stage.classList.toggle("is-active", latestY > 12);
+        const pageOffset = -latestY;
+        leftCopy.style.transform = "translate3d(0," + pageOffset.toFixed(1) + "px,0)";
+        rightCopy.style.transform = "translate3d(0," + pageOffset.toFixed(1) + "px,0)";
+        stage.classList.toggle("is-active", latestY > 12 && latestY < sheetEnd - 1);
       };
 
-      const onScrollOrResize = () => {
+      const onScroll = () => {
         latestY = window.scrollY;
         if (!frame) frame = requestAnimationFrame(draw);
       };
-      window.addEventListener("scroll", onScrollOrResize, { passive: true });
-      window.addEventListener("resize", onScrollOrResize, { passive: true });
+      const onResize = () => {
+        measure();
+        latestY = window.scrollY;
+        if (!frame) frame = requestAnimationFrame(draw);
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onResize, { passive: true });
+      measure();
       draw();
     };
-
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", setupInjection, { once: true });
     } else {
@@ -266,92 +273,78 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     pointer-events: none;
     opacity: 0;
     isolation: isolate;
-    perspective: 1400px;
-    perspective-origin: 50% 42%;
+    perspective: 1000px;
+    perspective-origin: 50% 44%;
     transform-style: preserve-3d;
-    transition: opacity .18s ease;
+    transition: opacity .12s linear;
+    background: #fff;
     --injection-y: 18px;
     --tear-height: 168px;
-    --fold-distance: 0px;
     --fold-angle: 0deg;
-    --paper-edge: 10px;
+    --fold-separation: 0px;
+    --fold-lift: 0px;
+    --paper-edge: 9px;
   }
   .injection-stage.is-active { opacity: 1; }
-  .paper-underpage,
-  .paper-base,
+  .paper-underpage {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    background: #fff;
+  }
   .paper-flap {
     position: absolute;
-    left: 0;
-    width: 100vw;
-    pointer-events: none;
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-  }
-  .paper-underpage {
-    z-index: 1;
-    inset: 0;
-    overflow: hidden;
-    background-color: #e9e4d9;
-    background-image:
-      radial-gradient(ellipse at 16% 18%, rgba(255,255,255,.48), transparent 42%),
-      radial-gradient(ellipse at 84% 76%, rgba(151,133,105,.10), transparent 44%);
-  }
-  .paper-base {
     z-index: 3;
-    top: var(--tear-height);
-    height: calc(100dvh - var(--tear-height));
-    overflow: hidden;
-    background: #efeee9;
-    box-shadow: 0 -5px 14px rgba(27, 25, 20, .10);
-  }
-  .paper-flap {
-    z-index: 4;
     top: 0;
     width: 50vw;
     height: var(--tear-height);
     overflow: hidden;
     background: #efeee9;
-    will-change: transform, height;
     transform-style: preserve-3d;
     backface-visibility: hidden;
-    filter: drop-shadow(0 9px 8px rgba(29, 25, 19, .18));
+    will-change: transform;
+    border: 0;
   }
   .paper-flap-left {
     left: 0;
-    transform-origin: 100% 48%;
-    transform: translateX(calc(0px - var(--fold-distance))) rotateY(calc(0deg - var(--fold-angle)));
+    transform-origin: 100% 50%;
+    transform: translate3d(calc(0px - var(--fold-separation)), 0, var(--fold-lift)) rotateY(var(--fold-angle));
     clip-path: polygon(
-      0 0, 100% 0, 98.8% 3%, 100% 7%, 97.2% 11%, 99.2% 15%,
-      96.9% 19%, 99.5% 24%, 97.1% 28%, 100% 33%, 96.4% 39%,
-      98.9% 45%, 96.8% 51%, 100% 57%, 97.4% 62%, 99.4% 67%,
-      96.5% 74%, 99.1% 79%, 97.2% 85%, 100% 91%, 97.7% 96%, 99% 100%, 0 100%
+      0 0, 100% 0, 98.2% 4%, 99.7% 10%, 94.6% 15%,
+      98.7% 23%, 95.1% 31%, 100% 37%, 92.8% 45%,
+      97.4% 54%, 91.6% 61%, 96.5% 68%, 93.8% 77%,
+      99.5% 84%, 94.4% 92%, 97.6% 97%, 99.3% 100%, 0 100%
     );
   }
   .paper-flap-right {
     left: 50vw;
-    transform-origin: 0 48%;
-    transform: translateX(var(--fold-distance)) rotateY(var(--fold-angle));
+    transform-origin: 0 50%;
+    transform: translate3d(var(--fold-separation), 0, var(--fold-lift)) rotateY(calc(0deg - var(--fold-angle)));
     clip-path: polygon(
-      0 0, 100% 0, 100% 100%, 0 100%, 2.2% 96%, 0 91%,
-      3.4% 85%, .8% 80%, 3.7% 74%, 0 68%, 2.9% 63%, .5% 57%,
-      3.1% 51%, 1.1% 46%, 3.6% 40%, 0 34%, 2.6% 29%, .4% 24%,
-      3.1% 19%, .8% 15%, 3% 11%, 0 7%, 1.2% 3%
+      0 0, 100% 0, 100% 100%, 3.5% 100%, 1% 93%,
+      5.5% 87%, 0 80%, 6.5% 73%, 3.5% 64%, 8% 56%,
+      2.5% 49%, 6.5% 42%, 0 34%, 4% 28%, 1.5% 20%,
+      4.5% 13%, 0 8%, 2% 3%
     );
   }
   .paper-copy {
-    position: absolute !important;
+    position: absolute;
     top: 0;
     left: 0;
-    width: 100vw !important;
-    max-width: none !important;
-    min-height: 100%;
-    margin: 0 !important;
-    pointer-events: none !important;
-    overflow: visible !important;
+    width: 100vw;
+    margin: 0;
     background: #efeee9;
+    pointer-events: none;
     will-change: transform;
   }
+  .paper-copy > .hero,
+  .paper-copy > .approach {
+    width: 100%;
+    max-width: none;
+  }
   .paper-flap-right .paper-copy { left: -50vw; }
+  .paper-copy a,
+  .paper-copy button { pointer-events: none !important; }
   .paper-flap::before,
   .paper-flap::after {
     content: "";
@@ -364,31 +357,29 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .paper-flap-left::before {
     right: 0;
     width: var(--paper-edge);
-    background: linear-gradient(90deg, rgba(239,238,233,0), rgba(186,176,157,.55) 48%, rgba(70,61,48,.22));
-    box-shadow: 2px 0 1px rgba(255,255,255,.68) inset;
+    background: linear-gradient(90deg, rgba(255,255,255,.05), rgba(178,164,143,.42) 42%, rgba(67,56,42,.28));
+    box-shadow: 1px 0 2px rgba(255,255,255,.8) inset;
   }
   .paper-flap-right::before {
     left: 0;
     width: var(--paper-edge);
-    background: linear-gradient(90deg, rgba(70,61,48,.22), rgba(186,176,157,.55) 48%, rgba(239,238,233,0));
-    box-shadow: -2px 0 1px rgba(255,255,255,.68) inset;
+    background: linear-gradient(90deg, rgba(67,56,42,.28), rgba(178,164,143,.42) 58%, rgba(255,255,255,.05));
+    box-shadow: -1px 0 2px rgba(255,255,255,.8) inset;
   }
   .paper-flap::after {
     inset: 0;
-    opacity: .08;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='.3'/%3E%3C/svg%3E");
-    background-size: 180px 180px;
+    opacity: .55;
+    background: linear-gradient(180deg, rgba(255,255,255,.11), transparent 28%, rgba(100,85,64,.045) 100%);
   }
   .paper-tear-shadow {
     position: absolute;
     z-index: 2;
     top: 0;
     left: 50vw;
-    width: clamp(16px, 3.6vw, 42px);
+    width: 12px;
     height: var(--tear-height);
     transform: translateX(-50%);
-    background: linear-gradient(90deg, rgba(20,18,14,.36), rgba(20,18,14,.13) 22%, rgba(20,18,14,.025) 43%, transparent 50%, rgba(20,18,14,.025) 57%, rgba(20,18,14,.13) 78%, rgba(20,18,14,.36));
+    background: linear-gradient(90deg, rgba(30,25,18,.20), rgba(30,25,18,.07) 28%, transparent 50%, rgba(30,25,18,.07) 72%, rgba(30,25,18,.20));
   }
   .injection-syringe {
     position: absolute;
@@ -400,9 +391,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     height: 150px;
     overflow: visible;
     transform: translateX(-50%);
-    transform-origin: 50% 10%;
     color: #11110f;
-    filter: drop-shadow(0 2px 2px rgba(18, 17, 15, .24));
   }
   .syringe-lines {
     fill: none;
@@ -413,9 +402,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     vector-effect: non-scaling-stroke;
   }
   @media (max-width: 650px) {
-    .injection-stage { --paper-edge: 7px; perspective: 950px; }
-    .paper-flap { filter: drop-shadow(0 6px 5px rgba(29,25,19,.2)); }
-    .paper-tear-shadow { width: 18px; }
+    .injection-stage { perspective: 900px; --paper-edge: 7px; }
     .injection-syringe { width: 50px; height: 150px; }
   }
   @media (prefers-reduced-motion: reduce) {
