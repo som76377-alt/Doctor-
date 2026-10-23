@@ -198,13 +198,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         // Rotate back around the centre seam. No lateral translation: the opening comes from the fold.
         const rawFold = Math.min(1, Math.max(0, (progress - 0.015) / 0.96));
         const foldProgress = rawFold * rawFold * (3 - 2 * rawFold);
-        const foldAngle = foldProgress * (viewportWidth <= 650 ? 87 : 88);
+        const foldAngle = foldProgress * (viewportWidth <= 650 ? 86 : 88);
         const curl = foldProgress * 2.5;
+        // Keep each outer page edge visually anchored as its half turns edge-on.
+        const foldPush = (viewportWidth / 2) * (1 - Math.cos(foldAngle * Math.PI / 180));
 
         stage.style.setProperty("--injection-y", syringeY.toFixed(1) + "px");
         stage.style.setProperty("--tear-bottom", tearBottom.toFixed(1) + "px");
         stage.style.setProperty("--fold-angle", foldAngle.toFixed(2) + "deg");
         stage.style.setProperty("--fold-curl", curl.toFixed(2) + "deg");
+        stage.style.setProperty("--fold-push", foldPush.toFixed(1) + "px");
 
         // Follow only the live scroll position. DOM measurements are cached until resize.
         const pageOffset = -latestY;
@@ -292,6 +295,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     --tear-bottom: calc(100dvh - 168px);
     --fold-angle: 0deg;
     --fold-curl: 0deg;
+    --fold-push: 0px;
     --paper-edge: 8px;
   }
   .injection-stage.is-active { opacity: 1; }
@@ -339,12 +343,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .paper-flap-left {
     left: 0;
     transform-origin: 100% 50%;
-    transform: rotateY(calc(0deg - var(--fold-angle))) rotateX(calc(0deg - var(--fold-curl)));
+    transform: translateX(calc(0px - var(--fold-push))) rotateY(calc(0deg - var(--fold-angle))) rotateX(calc(0deg - var(--fold-curl)));
   }
   .paper-flap-right {
     left: 50vw;
     transform-origin: 0 50%;
-    transform: rotateY(var(--fold-angle)) rotateX(var(--fold-curl));
+    transform: translateX(var(--fold-push)) rotateY(var(--fold-angle)) rotateX(var(--fold-curl));
   }
   .paper-copy {
     position: absolute;
