@@ -595,7 +595,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .back-link { position:absolute; z-index:20; top:22px; left:clamp(20px,4vw,48px); display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,.78); text-decoration:none; font-size:12px; letter-spacing:.03em; mix-blend-mode:difference; }
   .back-link span { font-size:18px; line-height:1; }
   .reveal-track { position:relative; height:260svh; background:#f1efe9; }
-  .reveal-stage { position:sticky; top:0; width:100%; height:100svh; min-height:520px; overflow:hidden; isolation:isolate; perspective:1600px; background:#f1efe9; transform-style:preserve-3d; }
+  .reveal-stage { position:sticky; top:0; width:100%; height:100svh; min-height:100svh; overflow:hidden; isolation:isolate; perspective:1600px; background:#f1efe9; transform-style:preserve-3d; }
   .under-page { position:absolute; z-index:1; inset:0; display:flex; flex-direction:column; justify-content:space-between; padding:clamp(24px,4.8vw,70px) clamp(24px,7.4vw,112px) clamp(20px,3vw,42px); overflow:hidden; background:radial-gradient(ellipse at 83% 20%,rgba(185,202,211,.23),transparent 36%),#f1efe9; color:#172735; }
   .under-topline, .under-footer { display:flex; align-items:center; justify-content:space-between; gap:20px; }
   .under-brand { display:inline-flex; align-items:center; gap:10px; text-decoration:none; font-size:10px; font-weight:750; letter-spacing:.18em; }
@@ -664,7 +664,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
   @media (max-width:680px) {
     .back-link { top:18px; left:20px; font-size:11px; }
-    .reveal-stage { min-height:540px; }
+    .reveal-stage { min-height:100svh; }
     .under-page { padding:24px 24px 20px; }
     .under-label { max-width:118px; text-align:right; line-height:1.5; }
     .under-content { padding:25px 0; }
