@@ -147,6 +147,13 @@ const homeHref = import.meta.env.BASE_URL;
     height: number;
   }
 
+  interface FallbackStrip {
+    element: HTMLDivElement;
+    side: Side;
+    distance: number;
+    baseCenterX: number;
+  }
+
   const track = document.querySelector<HTMLElement>("[data-reveal-track]");
   const stage = document.querySelector<HTMLElement>("[data-reveal-stage]");
   const cover = document.querySelector<HTMLElement>("[data-cover-artwork]");
@@ -160,6 +167,8 @@ const homeHref = import.meta.env.BASE_URL;
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const state = { progress: 0 };
     const halves: PaperHalf[] = [];
+    const fallbackStrips: FallbackStrip[] = [];
+    const fallbackPieces: HTMLElement[] = [];
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 3000);
     camera.position.set(0, 0, 1500);
@@ -286,10 +295,12 @@ const homeHref = import.meta.env.BASE_URL;
     // The angle is strongest at the slit and decays across the sheet, so the
     // inner lip folds back while the far edge remains the trailing paper.
     const mapCurl = (distance: number, halfWidth: number, progress: number) => {
-      if (progress <= 0 || distance <= 0) return { x: distance, z: 0 };
+      if (progress <= 0 || distance <= 0) return { x: distance, z: 0, angle: 0 };
       const segments = Math.max(16, Math.ceil((distance / halfWidth) * 84));
       const step = distance / segments;
-      const rollRadius = Math.max(halfWidth * (0.105 - progress * 0.035), 1);
+      // The curl starts tight at the split, then expands through the sheet.
+      // A shrinking radius only bent a tiny lip and left nearly the whole half flat.
+      const rollRadius = Math.max(halfWidth * (0.11 + progress * 0.43), 1);
       const maxAngle = 0.08 + 3.35 * Math.pow(progress, 1.18);
       let mappedX = 0;
       let mappedZ = 0;
@@ -300,7 +311,11 @@ const homeHref = import.meta.env.BASE_URL;
         mappedX += Math.cos(theta) * step;
         mappedZ += Math.sin(theta) * step;
       }
-      return { x: mappedX, z: mappedZ };
+      return {
+        x: mappedX,
+        z: mappedZ,
+        angle: maxAngle * Math.exp(-distance / rollRadius),
+      };
     };
 
     const updateHalf = (half: PaperHalf, progress: number) => {
@@ -360,12 +375,10 @@ const homeHref = import.meta.env.BASE_URL;
       half.edgeGeometry.computeVertexNormals();
       half.edge.material.opacity = Math.min(0.9, progress * 3.2) * (1 - progress * 0.2);
 
-      // Keep the inner edge anchored near the split and let the curl do the work.
-      // Only a small outward drift remains; large panel-like translation was the main failure.
-      // The inner edge stays near the slit. Let the vertices perform the turn;
-      // a small whole-mesh drift only clears the rolled lip from the centre.
+      // Let the deformation carry the turn through the middle of the sheet.
+      // The final outward travel clears the curled halves beyond the viewport edges.
       const reveal = progress * progress;
-      const outwardDrift = viewportWidth * 0.055 * reveal;
+      const outwardDrift = viewportWidth * 0.55 * reveal;
       half.front.position.set(
         half.side * half.width / 2 + half.side * outwardDrift,
         0,
@@ -399,14 +412,22 @@ const homeHref = import.meta.env.BASE_URL;
         for (const half of halves) updateHalf(half, progress);
         renderer.render(scene, camera);
       } else if (activeMode === "fallback") {
-        const pieces = Array.from(fallbackLayer.querySelectorAll<HTMLElement>(".fallback-piece"));
-        for (const piece of pieces) {
-          const side: Side = piece.dataset.side === "left" ? -1 : 1;
-          const travel = side * viewportWidth * 0.19 * progress * progress;
+        const halfWidth = viewportWidth / 2;
+        const reveal = progress * progress;
+        const outwardDrift = viewportWidth * 0.55 * reveal;
+        for (const piece of fallbackPieces) {
           piece.style.setProperty("--progress", String(progress));
-          piece.style.transform = "translate3d(" + travel + "px, 0, 0) rotateY(" + (-side * progress * 1.38) + "rad)";
-          piece.style.opacity = progress >= 0.999 ? "0" : "1";
-          piece.style.filter = "drop-shadow(" + (side * -3) + "px 10px 12px rgba(3, 18, 37, " + (0.28 * (1 - progress * 0.35)) + "))";
+        }
+        for (const strip of fallbackStrips) {
+          const mapped = mapCurl(strip.distance, halfWidth, progress);
+          const desiredCenterX = viewportWidth / 2 + strip.side * (mapped.x + outwardDrift);
+          const translateX = desiredCenterX - strip.baseCenterX;
+          const translateZ = strip.side < 0 ? mapped.z : -mapped.z;
+          const shade = Math.min(0.58, progress * 0.4 + Math.abs(Math.sin(mapped.angle)) * 0.25);
+          strip.element.style.setProperty("--curl-shade", String(shade));
+          strip.element.style.transform =
+            "translate3d(" + translateX + "px, 0, " + translateZ + "px) rotateY(" + mapped.angle + "rad)";
+          strip.element.style.opacity = progress >= 0.999 ? "0" : "1";
         }
       }
     };
@@ -420,30 +441,63 @@ const homeHref = import.meta.env.BASE_URL;
         canvas.style.opacity = "0";
       }
       fallbackLayer.replaceChildren();
+      fallbackStrips.length = 0;
+      fallbackPieces.length = 0;
+
+      const halfWidth = viewportWidth / 2;
+      const stripCount = 32;
+      const stripWidth = halfWidth / stripCount;
 
       for (const side of [-1, 1] as Side[]) {
         const piece = document.createElement("div");
         piece.className = "fallback-piece " + (side < 0 ? "fallback-piece--left" : "fallback-piece--right");
         piece.dataset.side = side < 0 ? "left" : "right";
-        const clone = cover.cloneNode(true) as HTMLElement;
-        clone.removeAttribute("data-cover-artwork");
-        clone.removeAttribute("aria-labelledby");
-        clone.setAttribute("aria-hidden", "true");
-        clone.classList.add("cover-artwork--clone");
-        clone.style.position = "absolute";
-        clone.style.inset = "0 auto auto 0";
-        clone.style.width = viewportWidth + "px";
-        clone.style.height = viewportHeight + "px";
-        clone.style.opacity = "1";
-        clone.style.visibility = "visible";
-        if (side > 0) clone.style.left = (-viewportWidth / 2) + "px";
-        piece.append(clone);
+        piece.style.width = halfWidth + "px";
+        piece.style.height = viewportHeight + "px";
+        piece.style.left = (side < 0 ? 0 : halfWidth) + "px";
+        piece.style.right = "auto";
+        fallbackPieces.push(piece);
+
+        for (let index = 0; index < stripCount; index += 1) {
+          const localLeft = index * stripWidth;
+          const globalLeft = (side < 0 ? 0 : halfWidth) + localLeft;
+          const baseCenterX = globalLeft + stripWidth / 2;
+          const distance = side < 0 ? halfWidth - baseCenterX : baseCenterX - halfWidth;
+
+          const strip = document.createElement("div");
+          strip.className = "fallback-strip";
+          strip.style.left = localLeft + "px";
+          strip.style.width = stripWidth + "px";
+          strip.style.height = viewportHeight + "px";
+
+          const clone = cover.cloneNode(true) as HTMLElement;
+          clone.removeAttribute("data-cover-artwork");
+          clone.removeAttribute("aria-labelledby");
+          clone.setAttribute("aria-hidden", "true");
+          clone.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+          clone.classList.add("cover-artwork--clone");
+          clone.style.position = "absolute";
+          clone.style.inset = "0 auto auto 0";
+          clone.style.left = -globalLeft + "px";
+          clone.style.width = viewportWidth + "px";
+          clone.style.height = viewportHeight + "px";
+          clone.style.opacity = "1";
+          clone.style.visibility = "visible";
+
+          const reverseFace = document.createElement("div");
+          reverseFace.className = "fallback-strip-back";
+          reverseFace.setAttribute("aria-hidden", "true");
+
+          strip.append(clone, reverseFace);
+          piece.append(strip);
+          fallbackStrips.push({ element: strip, side, distance, baseCenterX });
+        }
         fallbackLayer.append(piece);
       }
       cover.style.opacity = "0";
       cover.style.pointerEvents = "none";
       fallbackLayer.style.opacity = "1";
-      setNote("CSS paper fallback");
+      setNote("CSS curled-strip fallback");
       renderProgress(state.progress);
     };
 
@@ -462,17 +516,7 @@ const homeHref = import.meta.env.BASE_URL;
       keyLight.position.set(-viewportWidth * 0.34, viewportHeight * 0.28, 680);
       fillLight.position.set(viewportWidth * 0.42, -viewportHeight * 0.22, 420);
       if (activeMode === "fallback") {
-        for (const piece of Array.from(fallbackLayer.querySelectorAll<HTMLElement>(".fallback-piece"))) {
-          piece.style.width = (viewportWidth / 2) + "px";
-          piece.style.height = viewportHeight + "px";
-          const clone = piece.firstElementChild as HTMLElement | null;
-          if (clone) {
-            clone.style.width = viewportWidth + "px";
-            clone.style.height = viewportHeight + "px";
-            clone.style.left = piece.dataset.side === "right" ? (-viewportWidth / 2) + "px" : "0";
-          }
-        }
-        renderProgress(state.progress);
+        activateFallback();
       }
     };
 
@@ -660,12 +704,16 @@ const homeHref = import.meta.env.BASE_URL;
   .scroll-arrow { display:grid; place-items:center; width:32px; height:32px; border:1px solid rgba(234,244,251,.4); border-radius:50%; color:#f4f8fc; font-size:15px; }
   .paper-canvas { position:absolute; z-index:4; inset:0; display:block; width:100%; height:100%; opacity:0; pointer-events:none; filter:drop-shadow(0 10px 12px rgba(3,16,32,.32)); transition:opacity .12s linear; }
   .fallback-pieces { position:absolute; z-index:4; inset:0; opacity:0; pointer-events:none; perspective:1600px; }
-  .fallback-piece { position:absolute; top:0; width:50%; height:100%; overflow:hidden; transform-style:preserve-3d; backface-visibility:visible; }
-  .fallback-piece--left { left:0; transform-origin:100% 50%; }
-  .fallback-piece--right { right:0; transform-origin:0 50%; }
-  .fallback-piece::after { content:""; position:absolute; top:0; bottom:0; width:2px; background:linear-gradient(90deg,rgba(255,255,255,.38),rgba(2,20,39,.32)); opacity:var(--progress,0); }
+  .fallback-piece { position:absolute; top:0; width:50%; height:100%; overflow:visible; transform-style:preserve-3d; }
+  .fallback-piece--left { left:0; }
+  .fallback-piece--right { left:50%; right:auto; }
+  .fallback-piece::after { content:""; position:absolute; top:0; bottom:0; width:2px; z-index:80; pointer-events:none; background:linear-gradient(90deg,rgba(255,255,255,.38),rgba(2,20,39,.32)); opacity:var(--progress,0); }
   .fallback-piece--left::after { right:0; }
   .fallback-piece--right::after { left:0; }
+  .fallback-strip { position:absolute; top:0; overflow:hidden; transform-origin:50% 50%; transform-style:preserve-3d; backface-visibility:visible; will-change:transform; }
+  .fallback-strip > .cover-artwork--clone { backface-visibility:hidden; }
+  .fallback-strip::before { content:""; position:absolute; inset:0; z-index:50; pointer-events:none; background:linear-gradient(90deg,rgba(3,17,32,.42),transparent 52%,rgba(223,241,255,.18)); opacity:var(--curl-shade,0); }
+  .fallback-strip-back { position:absolute; inset:0; z-index:40; pointer-events:none; background:linear-gradient(125deg,#d8e4ed,#f4f7fa 48%,#b7c8d8); transform:rotateY(180deg) translateZ(.2px); backface-visibility:hidden; }
   .cover-artwork--clone { max-width:none !important; }
   .reveal-seam { position:absolute; z-index:5; top:0; bottom:0; left:50%; width:1px; pointer-events:none; opacity:0; background:linear-gradient(180deg,transparent 2%,rgba(235,246,255,.88) 18%,rgba(7,26,48,.55) 52%,rgba(235,246,255,.68) 82%,transparent 100%); box-shadow:0 0 11px rgba(2,13,28,.28); }
   .engine-note { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
