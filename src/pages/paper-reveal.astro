@@ -206,7 +206,9 @@ const homeHref = import.meta.env.BASE_URL;
 
     const makeHalf = (side: Side, textureCanvas: HTMLCanvasElement) => {
       const halfWidth = viewportWidth / 2;
-      const geometry = new THREE.PlaneGeometry(halfWidth, viewportHeight, 42, 34);
+      // The rolled lip occupies only a small band near the split; enough columns are
+      // needed there to keep the curl smooth on mobile instead of visibly faceted.
+      const geometry = new THREE.PlaneGeometry(halfWidth, viewportHeight, 128, 44);
       const positions = geometry.attributes.position;
       const basePositions = Float32Array.from(positions.array as ArrayLike<number>);
       const texture = new THREE.CanvasTexture(textureCanvas);
