@@ -290,10 +290,13 @@ const homeHref = import.meta.env.BASE_URL;
         envMapIntensity: 1.55,
         side: THREE.FrontSide,
       });
+      // Warm-white reverse of the coated cover, visible briefly during the outward turn.
       const backMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xdce5ee,
-        roughness: 0.96,
+        color: 0xf1efe9,
+        roughness: 0.72,
         metalness: 0,
+        clearcoat: 0.16,
+        clearcoatRoughness: 0.28,
         side: THREE.BackSide,
       });
       const front = new THREE.Mesh(geometry, frontMaterial);
@@ -353,8 +356,9 @@ const homeHref = import.meta.env.BASE_URL;
       if (progress <= 0 || distance <= 0) return { x: distance, z: 0, angle: 0 };
       const segments = Math.max(16, Math.ceil((distance / halfWidth) * 84));
       const step = distance / segments;
-      // Restore the earlier, tighter curl instead of turning each half into a broad panel.
-      const rollRadius = Math.max(halfWidth * (0.105 - progress * 0.035), 1);
+      // The curl starts tight at the split, then expands through the sheet.
+      // A shrinking radius only bent a tiny lip and left nearly the whole half flat.
+      const rollRadius = Math.max(halfWidth * (0.11 + progress * 0.43), 1);
       const maxAngle = 0.08 + 3.35 * Math.pow(progress, 1.18);
       let mappedX = 0;
       let mappedZ = 0;
@@ -398,10 +402,8 @@ const homeHref = import.meta.env.BASE_URL;
         const edgeWeight = Math.sin(vertical * Math.PI);
         const smallRipple = Math.sin(vertical * Math.PI * 4 + columnT * 2.4) *
           progress * edgeWeight * 2.2;
-        // Keep the pre-gloss fold: a smooth roll without extra corner pulls or diagonal twists.
         vertices[offset] = localX;
         vertices[offset + 1] = baseY + smallRipple;
-        // Mirror depth so the left and right sheets turn in opposite directions.
         vertices[offset + 2] = mapped.z * (half.side < 0 ? 1 : -1);
       }
 
@@ -431,9 +433,10 @@ const homeHref = import.meta.env.BASE_URL;
       half.edgeGeometry.computeVertexNormals();
       half.edge.material.opacity = Math.min(0.9, progress * 3.2) * (1 - progress * 0.2);
 
-      // Restore the small outward drift from the earlier fold.
+      // Let the deformation carry the turn through the middle of the sheet.
+      // The final outward travel clears the curled halves beyond the viewport edges.
       const reveal = progress * progress;
-      const outwardDrift = viewportWidth * 0.055 * reveal;
+      const outwardDrift = viewportWidth * 0.55 * reveal;
       half.front.position.set(
         half.side * half.width / 2 + half.side * outwardDrift,
         0,
@@ -497,7 +500,7 @@ const homeHref = import.meta.env.BASE_URL;
         const halfWidth = viewportWidth / 2;
         // Keep the same restrained travel as the original curl.
         const reveal = progress * progress;
-        const outwardDrift = viewportWidth * 0.055 * reveal;
+        const outwardDrift = viewportWidth * 0.55 * reveal;
         for (const piece of fallbackPieces) {
           piece.style.setProperty("--progress", String(progress));
         }
@@ -819,7 +822,7 @@ const homeHref = import.meta.env.BASE_URL;
   .fallback-strip > .cover-artwork--clone { backface-visibility:hidden; }
   .fallback-strip::before { content:""; position:absolute; inset:0; z-index:50; pointer-events:none; background:linear-gradient(105deg,rgba(255,255,255,.04) 0%,rgba(239,249,255,.28) 18%,rgba(255,255,255,.025) 34%,transparent 54%,rgba(2,13,27,.2) 100%),linear-gradient(90deg,rgba(3,17,32,.32),transparent 56%,rgba(223,241,255,.22)); opacity:var(--curl-shade,0); }
   .fallback-strip::after { content:""; position:absolute; inset:-1px; z-index:60; pointer-events:none; background:linear-gradient(90deg,transparent 2%,rgba(240,250,255,.9) 46%,rgba(255,255,255,.06) 58%,transparent 100%); opacity:var(--curl-gloss,0); mix-blend-mode:screen; }
-  .fallback-strip-back { position:absolute; inset:0; z-index:40; pointer-events:none; background:linear-gradient(125deg,#d8e4ed,#f4f7fa 48%,#b7c8d8); transform:rotateY/(180deg) translateZ(.2px); backface-visibility:hidden; }
+  .fallback-strip-back { position:absolute; inset:0; z-index:40; pointer-events:none; background:linear-gradient(115deg,#e4e0d7 0%,#fbfaf6 22%,#f1efe9 42%,#fffefa 52%,#e8e4db 75%,#f7f4ed 100%); transform:rotateY/(180deg) translateZ(.2px); backface-visibility:hidden; }
   .fallback-strip-back::after { content:""; position:absolute; inset:0; background:linear-gradient(112deg,transparent 22%,rgba(255,255,255,.16) 36%,rgba(255,255,255,.82) 46%,rgba(255,255,255,.14) 53%,transparent 68%); opacity:var(--curl-gloss,0); }
   .cover-artwork--clone { max-width:none !important; }
   .reveal-seam { position:absolute; z-index:6; top:0; bottom:0; left:50%; width:1px; pointer-events:none; opacity:0; background:linear-gradient(180deg,transparent 2%,rgba(235,246,255,.88) 18%,rgba(7,26,48,.55) 52%,rgba(235,246,255,.68) 82%,transparent 100%); box-shadow:0 0 11px rgba(2,13,28,.28); }
