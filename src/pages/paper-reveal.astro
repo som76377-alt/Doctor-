@@ -360,7 +360,7 @@ const homeHref = import.meta.env.BASE_URL;
       // The curl starts tight at the split, then expands through the sheet.
       // A shrinking radius only bent a tiny lip and left nearly the whole half flat.
       const rollRadius = Math.max(halfWidth * (0.11 + progress * 0.43), 1);
-      const maxAngle = 0.08 + 2.92 * Math.pow(progress, 1.18);
+      const maxAngle = 0.08 + 3.35 * Math.pow(progress, 1.18);
       let mappedX = 0;
       let mappedZ = 0;
       for (let index = 0; index < segments; index += 1) {
@@ -395,11 +395,6 @@ const homeHref = import.meta.env.BASE_URL;
       const segmentCount = half.geometry.parameters.widthSegments;
       const halfWidth = half.width;
       const height = half.height;
-      // Rotate the curved cross-section about the split, not the half's centre.
-      // Mirroring X while sharing Z makes the two backs turn outward symmetrically.
-      const hingeAngle = progress * Math.PI * 0.47;
-      const hingeCos = Math.cos(hingeAngle);
-      const hingeSin = Math.sin(hingeAngle);
       const columnMap: Array<{ x: number; z: number }> = [];
 
       for (let column = 0; column <= segmentCount; column += 1) {
@@ -415,18 +410,14 @@ const homeHref = import.meta.env.BASE_URL;
           : (baseX + halfWidth / 2) / halfWidth;
         const column = Math.max(0, Math.min(segmentCount, Math.round(columnT * segmentCount)));
         const mapped = columnMap[column];
-        const projectedX = mapped.x * hingeCos - mapped.z * hingeSin;
-        const projectedZ = mapped.x * hingeSin + mapped.z * hingeCos;
-        const localX = half.side < 0 ? halfWidth / 2 - projectedX : -halfWidth / 2 + projectedX;
+        const localX = half.side < 0 ? halfWidth / 2 - mapped.x : -halfWidth / 2 + mapped.x;
         const vertical = Math.min(1, Math.max(0, (baseY + height / 2) / height));
         const edgeWeight = Math.sin(vertical * Math.PI);
         const smallRipple = Math.sin(vertical * Math.PI * 4 + columnT * 2.4) *
-          progress * edgeWeight * 1.8;
-        const tornEdge = paperTearOffset(vertical, progress, half.side) * Math.exp(-columnT * 15);
-
+          progress * edgeWeight * 2.2;
         vertices[offset] = localX;
-        vertices[offset + 1] = baseY + smallRipple + tornEdge;
-        vertices[offset + 2] = projectedZ;
+        vertices[offset + 1] = baseY + smallRipple;
+        vertices[offset + 2] = mapped.z * (half.side < 0 ? 1 : -1);
       }
 
       position.needsUpdate = true;
@@ -435,35 +426,40 @@ const homeHref = import.meta.env.BASE_URL;
 
       const edgePosition = half.edgeGeometry.attributes.position as THREE.BufferAttribute;
       const edgeVertices = edgePosition.array as Float32Array;
-      const tangentAngle = 0.08 + 2.92 * Math.pow(progress, 1.18);
+      const tangentAngle = (0.08 + 3.35 * Math.pow(progress, 1.18));
       const normalX = -half.side * Math.sin(tangentAngle);
       const normalZ = Math.cos(tangentAngle);
       const edgeX = half.side < 0 ? half.width / 2 : -half.width / 2;
       for (let row = 0; row <= half.edgeRows; row += 1) {
         const baseY = half.height / 2 - (row / half.edgeRows) * half.height;
         const vertical = Math.min(1, Math.max(0, (baseY + half.height / 2) / half.height));
-        const ripple = Math.sin(vertical * Math.PI * 4) * progress *
-          Math.sin(vertical * Math.PI) * 1.8;
-        const tear = paperTearOffset(vertical, progress, half.side);
+        const ripple = Math.sin(vertical * Math.PI * 4) * progress * Math.sin(vertical * Math.PI) * 2.2;
         for (let bank = 0; bank < 2; bank += 1) {
           const offset = (row * 2 + bank) * 3;
           const thicknessOffset = bank === 0 ? -0.9 : 0.9;
-          const thicknessX = normalX * thicknessOffset;
-          const thicknessZ = normalZ * thicknessOffset;
-          edgeVertices[offset] = edgeX + thicknessX * hingeCos - thicknessZ * hingeSin;
-          edgeVertices[offset + 1] = baseY + ripple + tear;
-          edgeVertices[offset + 2] = thicknessX * hingeSin + thicknessZ * hingeCos;
+          edgeVertices[offset] = edgeX + normalX * thicknessOffset;
+          edgeVertices[offset + 1] = baseY + ripple;
+          edgeVertices[offset + 2] = normalZ * thicknessOffset;
         }
       }
       edgePosition.needsUpdate = true;
       half.edgeGeometry.computeVertexNormals();
       half.edge.material.opacity = Math.min(0.9, progress * 3.2) * (1 - progress * 0.2);
 
-      // No lateral panel drift: the folded cross-section itself clears the viewport.
-      half.front.position.set(half.side * half.width / 2, 0, 0);
+      // Let the deformation carry the turn through the middle of the sheet.
+      // The final outward travel clears the curled halves beyond the viewport edges.
+      const reveal = progress * progress;
+      const outwardDrift = viewportWidth * 0.55 * reveal;
+      half.front.position.set(
+        half.side * half.width / 2 + half.side * outwardDrift,
+        0,
+        progress * 2.5,
+      );
       half.back.position.copy(half.front.position);
       half.edge.position.copy(half.front.position);
-      half.front.rotation.set(0, 0, 0);
+      // Do not rotate the entire sheet like a rigid board. The curve above is
+      // the turn; this tiny rotation only helps the edge catch the light.
+      half.front.rotation.set(0, -half.side * progress * 0.12, 0);
       half.back.rotation.copy(half.front.rotation);
       half.edge.rotation.copy(half.front.rotation);
     };
