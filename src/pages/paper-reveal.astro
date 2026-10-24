@@ -403,7 +403,8 @@ const homeHref = import.meta.env.BASE_URL;
           progress * edgeWeight * 2.2;
         vertices[offset] = localX;
         vertices[offset + 1] = baseY + smallRipple;
-        vertices[offset + 2] = mapped.z * (half.side < 0 ? 1 : -1);
+        // Both reverse faces turn away from the viewer; mirror the horizontal curl, not its depth.
+        vertices[offset + 2] = -mapped.z;
       }
 
       position.needsUpdate = true;
@@ -508,7 +509,9 @@ const homeHref = import.meta.env.BASE_URL;
           const mapped = mapCurl(strip.distance, halfWidth, progress);
           const desiredCenterX = viewportWidth / 2 + strip.side * (mapped.x + outwardDrift);
           const translateX = desiredCenterX - strip.baseCenterX;
-          const translateZ = strip.side < 0 ? mapped.z : -mapped.z;
+          // Keep both halves moving away from the viewer so their warm-white reverse faces peek out.
+          const translateZ = -mapped.z;
+          const turnAngle = strip.side < 0 ? -mapped.angle : mapped.angle;
           const shade = Math.min(0.82, 0.34 + progress * 0.36 +
             Math.abs(Math.sin(mapped.angle)) * 0.38);
           const gloss = Math.max(0, Math.cos(Math.abs(mapped.angle) - 0.72)) *
@@ -517,7 +520,7 @@ const homeHref = import.meta.env.BASE_URL;
           strip.element.style.setProperty("--curl-gloss", String(gloss));
           strip.element.style.transform =
             "translate3d(" + translateX + "px, 0, " + translateZ + "px) rotateY(" +
-            mapped.angle + "rad)";
+            turnAngle + "rad)";
           strip.element.style.opacity = progress >= 0.999 ? "0" : "1";
         }
       }
