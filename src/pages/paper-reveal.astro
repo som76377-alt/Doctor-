@@ -293,10 +293,10 @@ const homeHref = import.meta.env.BASE_URL;
       // Warm-white reverse of the coated cover, visible briefly during the outward turn.
       const backMaterial = new THREE.MeshPhysicalMaterial({
         color: 0xf1efe9,
-        roughness: 0.72,
+        roughness: 0.78,
         metalness: 0,
-        clearcoat: 0.16,
-        clearcoatRoughness: 0.28,
+        clearcoat: 0.08,
+        clearcoatRoughness: 0.36,
         side: THREE.BackSide,
       });
       const front = new THREE.Mesh(geometry, frontMaterial);
