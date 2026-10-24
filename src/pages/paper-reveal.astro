@@ -280,18 +280,21 @@ const homeHref = import.meta.env.BASE_URL;
       return half;
     };
 
+    // Map distance from the slit onto an integrated, rolled cross-section.
+    // The angle is strongest at the slit and decays across the sheet, so the
+    // inner lip folds back while the far edge remains the trailing paper.
     const mapCurl = (distance: number, halfWidth: number, progress: number) => {
       if (progress <= 0 || distance <= 0) return { x: distance, z: 0 };
-      const segments = Math.max(5, Math.ceil((distance / halfWidth) * 22));
+      const segments = Math.max(16, Math.ceil((distance / halfWidth) * 84));
       const step = distance / segments;
+      const rollRadius = Math.max(halfWidth * (0.105 - progress * 0.035), 1);
+      const maxAngle = 0.08 + 3.35 * Math.pow(progress, 1.18);
       let mappedX = 0;
       let mappedZ = 0;
       for (let index = 0; index < segments; index += 1) {
         const q = (index + 0.5) * step;
-        // Curvature is concentrated at the split edge and decays across the sheet.
-        // A larger angular sweep creates an actual rolled cross-section rather than a shallow bow.
-        const rollProfile = Math.exp(-q / Math.max(1, halfWidth * 0.48));
-        const theta = 2.55 * progress * rollProfile;
+        const rollProfile = Math.exp(-q / rollRadius);
+        const theta = maxAngle * rollProfile;
         mappedX += Math.cos(theta) * step;
         mappedZ += Math.sin(theta) * step;
       }
@@ -326,7 +329,7 @@ const homeHref = import.meta.env.BASE_URL;
           progress * edgeWeight * 2.2;
         vertices[offset] = localX;
         vertices[offset + 1] = baseY + smallRipple;
-        vertices[offset + 2] = mapped.z * 0.88;
+        vertices[offset + 2] = mapped.z * (half.side < 0 ? 1 : -1);
       }
 
       position.needsUpdate = true;
@@ -335,7 +338,7 @@ const homeHref = import.meta.env.BASE_URL;
 
       const edgePosition = half.edgeGeometry.attributes.position as THREE.BufferAttribute;
       const edgeVertices = edgePosition.array as Float32Array;
-      const tangentAngle = 2.55 * progress;
+      const tangentAngle = (0.08 + 3.35 * Math.pow(progress, 1.18));
       const normalX = -half.side * Math.sin(tangentAngle);
       const normalZ = Math.cos(tangentAngle);
       const edgeX = half.side < 0 ? half.width / 2 : -half.width / 2;
@@ -357,17 +360,20 @@ const homeHref = import.meta.env.BASE_URL;
 
       // Keep the inner edge anchored near the split and let the curl do the work.
       // Only a small outward drift remains; large panel-like translation was the main failure.
+      // The inner edge stays near the slit. Let the vertices perform the turn;
+      // a small whole-mesh drift only clears the rolled lip from the centre.
       const reveal = progress * progress;
-      const outwardDrift = viewportWidth * 0.19 * reveal;
-      const turnAngle = progress * 1.38;
+      const outwardDrift = viewportWidth * 0.055 * reveal;
       half.front.position.set(
         half.side * half.width / 2 + half.side * outwardDrift,
         0,
-        progress * 12,
+        progress * 2.5,
       );
       half.back.position.copy(half.front.position);
       half.edge.position.copy(half.front.position);
-      half.front.rotation.set(0, -half.side * turnAngle, 0);
+      // Do not rotate the entire sheet like a rigid board. The curve above is
+      // the turn; this tiny rotation only helps the edge catch the light.
+      half.front.rotation.set(0, -half.side * progress * 0.12, 0);
       half.back.rotation.copy(half.front.rotation);
       half.edge.rotation.copy(half.front.rotation);
     };
