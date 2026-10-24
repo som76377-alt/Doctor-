@@ -135,6 +135,9 @@ const homeHref = import.meta.env.BASE_URL;
 
   gsap.registerPlugin(ScrollTrigger);
 
+  // Avoid ScrollTrigger refreshes caused only by mobile browser address-bar movement.
+  ScrollTrigger.config({ ignoreMobileResize: true });
+
   type Side = -1 | 1;
 
   interface PaperHalf {
@@ -710,6 +713,18 @@ const homeHref = import.meta.env.BASE_URL;
       window.addEventListener("resize", () => {
         if (resizeCall) resizeCall.kill();
         resizeCall = gsap.delayedCall(0.2, () => {
+          const nextWidth = Math.max(1, stage.clientWidth);
+          const nextHeight = Math.max(1, stage.clientHeight);
+          const nextPixelRatio = Math.min(window.devicePixelRatio || 1, 1.6);
+          const dimensionsChanged = nextWidth !== viewportWidth || nextHeight !== viewportHeight;
+          const pixelRatioChanged = renderer !== null &&
+            Math.abs(renderer.getPixelRatio() - nextPixelRatio) > 0.01;
+
+          // Mobile browser chrome can fire resize while the svh-sized stage stays
+          // the same. Rebuilding the canvas then causes the scroll-scrubbed sheet
+          // to jump. Ignore chrome-only changes; resize only for real layout changes.
+          if (!dimensionsChanged && !pixelRatioChanged) return;
+
           resizeRenderer();
           if (activeMode === "webgl") captureCover().catch(() => activateFallback());
           else ScrollTrigger.refresh();
