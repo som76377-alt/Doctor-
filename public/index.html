@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your Clinic — Unzip Reveal</title>
+<style>
+:root{--ink:#10233a;--paper:#efe9dd;--teal:#2f7f78;--sage:#6d938b;--muted:#5d6b73;--line:#d6d2c4}
+*{box-sizing:border-box}
+html{scroll-behavior:auto;background:#efe9dd}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Helvetica Neue",Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.track{position:relative;height:520vh;height:520svh}
+.stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--paper)}
+.page2{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(22px,4.6vw,64px) clamp(22px,7vw,110px) clamp(18px,3vw,40px);
+  background:radial-gradient(ellipse at 84% 18%,rgba(109,147,139,.20),transparent 40%),radial-gradient(ellipse at 8% 100%,rgba(16,35,58,.07),transparent 46%),var(--paper)}
+.page2::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .3  0 0 0 0 .22  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.top,.bottom{position:relative;display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:10px;font-weight:700;letter-spacing:.18em;color:#6b7778}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none}
+.mark{width:24px;height:24px;border:1px solid #9fb0ab;border-radius:50%;display:grid;place-items:center;color:var(--teal);font-size:19px;font-weight:300;line-height:1}
+.center{position:relative;max-width:1100px;margin:auto 0}
+.kicker{display:flex;align-items:center;gap:10px;margin:0 0 22px;font-size:10px;font-weight:700;letter-spacing:.2em;color:#70807f}
+.kicker i{display:block;width:28px;height:1px;background:#73928d}
+h1,h2{margin:0;font-weight:500;letter-spacing:-.06em;line-height:.92}
+h1{font-size:clamp(3rem,9vw,8.4rem);max-width:980px}
+h1 em,h2 em{font-family:Georgia,"Times New Roman",serif;font-weight:400;color:var(--sage);letter-spacing:-.04em}
+.lead{max-width:520px;margin:24px 0 0;font-size:clamp(14px,1.5vw,18px);line-height:1.7;color:#55646a}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,3vw,44px);margin-top:clamp(22px,4.5vh,46px);border-top:1px solid var(--line)}
+.trio div{padding-top:14px}.trio b{display:block;font-size:10px;letter-spacing:.15em;color:#81958f;font-weight:600}
+.trio h3{margin:9px 0 6px;font-size:clamp(13px,1.4vw,18px);font-weight:650;letter-spacing:-.02em}
+.trio p{margin:0;max-width:230px;font-size:12px;line-height:1.55;color:#6b7778}
+canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:3}
+.syringe{position:absolute;left:0;top:0;z-index:5;pointer-events:none;transform-origin:50% 100%;will-change:transform;
+  filter:drop-shadow(10px 16px 10px rgba(5,14,26,.38)) drop-shadow(2px 3px 2px rgba(5,14,26,.35))}
+.syringe svg{display:block;width:100%;height:100%;overflow:visible}
+.after{position:relative;background:var(--paper);padding:clamp(70px,11vw,150px) clamp(22px,9vw,140px) 48px;display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,7vw,110px);align-items:end}
+.after h2{font-size:clamp(2.8rem,7vw,6.4rem)}
+.after p{margin:0 0 26px;max-width:470px;font-size:16px;line-height:1.8;color:#5c6b70}
+.after a{display:inline-block;padding-bottom:8px;border-bottom:1px solid #9baaa5;color:var(--ink);text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.06em}
+.after .rule{grid-column:1/-1;height:1px;background:var(--line);margin-top:clamp(50px,8vw,110px)}
+.after .meta{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;font-size:9px;font-weight:700;letter-spacing:.14em;color:#7a8584}
+@media (max-width:680px){.trio{gap:10px}.trio p{font-size:10.5px}.after{grid-template-columns:1fr}.after .meta{flex-direction:column}.top span:last-child{max-width:118px;text-align:right;line-height:1.5}}
+.no-gl .track{height:auto}
+.no-gl .stage{position:relative;height:auto;min-height:100svh}
+.no-gl canvas#gl,.no-gl .syringe{display:none}
+@media (prefers-reduced-motion:reduce){.track{height:auto}.stage{position:relative;height:auto;min-height:100svh}canvas#gl,.syringe{display:none}}
+</style>
+</head>
+<body>
+<main class="track" id="track">
+  <div class="stage" id="stage">
+    <section class="page2" aria-labelledby="t2">
+      <div class="top"><a class="brand" href="#"><span class="mark" aria-hidden="true">+</span>YOUR CLINIC</a><span>A MORE HUMAN STANDARD</span></div>
+      <div class="center">
+        <p class="kicker"><i></i>THE THINGS THAT MATTER</p>
+        <h1 id="t2">Good care<br>starts with <em>you.</em></h1>
+        <p class="lead">Behind every appointment should be a person who listens, a plan you understand, and the confidence to ask one more question.</p>
+        <div class="trio">
+          <div><b>01</b><h3>Time to listen</h3><p>Your story comes before a checklist.</p></div>
+          <div><b>02</b><h3>Clarity, always</h3><p>Know what happens next, and why.</p></div>
+          <div><b>03</b><h3>Care together</h3><p>Decisions made with you, not for you.</p></div>
+        </div>
+      </div>
+      <div class="bottom"><span>THOUGHTFUL BY DESIGN</span><span>01 — 03</span></div>
+    </section>
+    <canvas id="gl" aria-hidden="true"></canvas>
+    <div class="syringe" id="syringe" aria-hidden="true">
+      <svg viewBox="0 0 100 400" preserveAspectRatio="xMidYMax meet">
+        <defs>
+          <linearGradient id="gGlass" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".28" stop-color="#dff0f6" stop-opacity=".10"/><stop offset=".7" stop-color="#bcd8e4" stop-opacity=".14"/><stop offset="1" stop-color="#fff" stop-opacity=".45"/></linearGradient>
+          <linearGradient id="gLiq" x1="0" x2="1"><stop offset="0" stop-color="#63c7bd"/><stop offset=".45" stop-color="#2aa398"/><stop offset="1" stop-color="#16756f"/></linearGradient>
+          <linearGradient id="gMetal" x1="0" x2="1"><stop offset="0" stop-color="#8d98a3"/><stop offset=".45" stop-color="#f5f8fb"/><stop offset="1" stop-color="#7c8792"/></linearGradient>
+          <linearGradient id="gPlas" x1="0" x2="1"><stop offset="0" stop-color="#cfd8de"/><stop offset=".4" stop-color="#ffffff"/><stop offset="1" stop-color="#b4c0c8"/></linearGradient>
+          <linearGradient id="gRub" x1="0" x2="1"><stop offset="0" stop-color="#1a2229"/><stop offset=".4" stop-color="#4a5660"/><stop offset="1" stop-color="#11171c"/></linearGradient>
+        </defs>
+        <polygon points="49.1,328 50.9,328 50.9,386 50,399 49.1,386" fill="url(#gMetal)"/>
+        <path d="M41 300h18l-3 30H44z" fill="#9ccfe0" fill-opacity=".75" stroke="#fff" stroke-opacity=".6" stroke-width=".6"/>
+        <rect x="46" y="36" width="8" height="142" rx="2" fill="url(#gPlas)"/><rect x="42" y="60" width="16" height="112" rx="2" fill="url(#gPlas)" opacity=".55"/>
+        <rect x="28" y="20" width="44" height="18" rx="7" fill="url(#gPlas)" stroke="#aebbc3" stroke-width=".6"/>
+        <rect x="30" y="118" width="40" height="184" rx="4" fill="url(#gLiq)" opacity=".0"/>
+        <rect x="32" y="192" width="36" height="108" rx="2" fill="url(#gLiq)"/><ellipse cx="50" cy="192" rx="18" ry="2.2" fill="#8fe0d6" opacity=".9"/>
+        <rect x="32" y="176" width="36" height="16" rx="2.5" fill="url(#gRub)"/>
+        <g stroke="#10233a" stroke-opacity=".7" stroke-width=".9"><path d="M58 140h10M62 152h6M58 164h10M62 176h6M58 204h10M62 216h6M58 228h10M62 240h6M58 252h10M62 264h6M58 276h10"/></g>
+        <rect x="30" y="118" width="40" height="184" rx="4" fill="url(#gGlass)" stroke="#fff" stroke-opacity=".7" stroke-width="1"/>
+        <rect x="35" y="124" width="5" height="172" rx="2.5" fill="#fff" opacity=".55"/><rect x="63" y="126" width="2" height="168" rx="1" fill="#fff" opacity=".35"/>
+        <rect x="12" y="112" width="76" height="11" rx="5" fill="url(#gPlas)" stroke="#aebbc3" stroke-width=".6"/>
+      </svg>
+    </div>
+  </div>
+</main>
+<section class="after" aria-labelledby="t3">
+  <h2 id="t3">What good care<br>should <em>feel like.</em></h2>
+  <div><p>The reveal is the transition, not the destination. Once the paper clears the screen, the page underneath is real HTML — responsive, selectable and ready to keep scrolling.</p><a href="#">Book a visit ↗</a></div>
+  <div class="rule"></div>
+  <div class="meta"><span>SCROLL-DRIVEN PAPER UNZIP</span><span>WEBGL · NO LIBRARIES</span><span>YOUR CLINIC</span></div>
+</section>
+<script>
+(() => {
+'use strict';
+const $ = (id) => document.getElementById(id);
+const track = $('track'), stage = $('stage'), canvas = $('gl'), syr = $('syringe');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let gl = null;
+if (!reduce) { try { gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: true, depth: true }); } catch (e) {} }
+if (!gl) { document.documentElement.classList.add('no-gl'); return; }
+
+/* ---------- procedural tileable noise (R = paper tooth, G = smooth tear noise, B = fibre streaks) ---------- */
+function rng(seed) { let s = seed >>> 0; return () => (s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296; }
+function lat(n, m, r) { const a = new Float32Array(n * m); for (let i = 0; i < a.length; i++) a[i] = r(); return { n, m, a }; }
+function smp(L, x, y) {
+  const fx = x * L.n, fy = y * L.m, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+  const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+  const xa = ((x0 % L.n) + L.n) % L.n, xb = (xa + 1) % L.n, ya = ((y0 % L.m) + L.m) % L.m, yb = (ya + 1) % L.m, a = L.a, n = L.n;
+  return (a[ya * n + xa] * (1 - sx) + a[ya * n + xb] * sx) * (1 - sy) + (a[yb * n + xa] * (1 - sx) + a[yb * n + xb] * sx) * sy;
+}
+function makeNoiseCanvas(size) {
+  const r = rng(1337), c = document.createElement('canvas'); c.width = c.height = size;
+  const x = c.getContext('2d'), img = x.createImageData(size, size), d = img.data;
+  const R = [[16, 16, .10], [32, 32, .14], [64, 64, .18], [128, 128, .22], [256, 256, .36]].map(o => [lat(o[0], o[1], r), o[2]]);
+  const G = [[8, 8, .55], [32, 32, .30], [64, 64, .15]].map(o => [lat(o[0], o[1], r), o[2]]);
+  const B = [[48, 4, .5], [96, 10, .3], [200, 24, .2]].map(o => [lat(o[0], o[1], r), o[2]]);
+  for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
+    const u = i / size, v = j / size; let a = 0, b = 0, e = 0;
+    for (const [L, w] of R) a += smp(L, u, v) * w; for (const [L, w] of G) b += smp(L, u, v) * w; for (const [L, w] of B) e += smp(L, u, v) * w;
+    const k = (j * size + i) * 4; d[k] = a * 255; d[k + 1] = b * 255; d[k + 2] = e * 255; d[k + 3] = 255;
+  }
+  x.putImageData(img, 0, 0); return c;
+}
+
+/* ---------- the printed cover (page 1), drawn at device resolution ---------- */
+function drawCover(W, H, dpr) {
+  const c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+  const x = c.getContext('2d'); x.scale(c.width / W, c.height / H);
+  const pad = Math.max(22, Math.min(W * 0.07, 110)), sans = '"Helvetica Neue",Inter,system-ui,Arial,sans-serif', serif = 'Georgia,"Times New Roman",serif';
+  let g = x.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#1f4f82'); g.addColorStop(.5, '#1a416f'); g.addColorStop(1, '#0f2a4d'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  g = x.createRadialGradient(W * .78, H * .5, 0, W * .78, H * .5, Math.max(W, H) * .5);
+  g.addColorStop(0, 'rgba(96,160,214,.42)'); g.addColorStop(1, 'rgba(96,160,214,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  g = x.createRadialGradient(W * .1, H * 1.02, 0, W * .1, H * 1.02, Math.max(W, H) * .55);
+  g.addColorStop(0, 'rgba(4,16,34,.55)'); g.addColorStop(1, 'rgba(4,16,34,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  // ink mottling so it reads as printed stock, not a flat fill
+  const r = rng(99);
+  for (let i = 0; i < 160; i++) { const px = r() * W, py = r() * H, pr = 30 + r() * 140; g = x.createRadialGradient(px, py, 0, px, py, pr);
+    const t = r() < .5; g.addColorStop(0, t ? 'rgba(255,255,255,.028)' : 'rgba(0,10,30,.04)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(px - pr, py - pr, pr * 2, pr * 2); }
+  // line illustration: orbit rings + ECG trace
+  x.lineWidth = 1; const cx = W * (W < 700 ? .74 : .76), cy = H * .5, rr = Math.min(W * (W < 700 ? .5 : .24), H * .34);
+  for (const [k, a] of [[1, .26], [.72, .32], [.46, .4], [1.55, .13], [2.1, .09]]) { x.strokeStyle = 'rgba(190,224,246,' + a + ')'; x.beginPath(); x.arc(cx, cy, rr * k, 0, 7); x.stroke(); }
+  g = x.createRadialGradient(cx - rr * .12, cy - rr * .16, 0, cx, cy, rr * .3); g.addColorStop(0, 'rgba(235,246,255,.7)'); g.addColorStop(1, 'rgba(140,190,226,.05)');
+  x.fillStyle = g; x.beginPath(); x.arc(cx, cy, rr * .3, 0, 7); x.fill();
+  x.strokeStyle = 'rgba(205,232,250,.55)'; x.lineWidth = 1.4; x.beginPath();
+  const ey = H * .79; x.moveTo(pad, ey); const seg = (W - pad * 2) / 14;
+  for (let i = 0; i < 14; i++) { const bx = pad + i * seg; if (i === 6) { x.lineTo(bx + seg * .2, ey); x.lineTo(bx + seg * .35, ey - H * .05); x.lineTo(bx + seg * .55, ey + H * .035); x.lineTo(bx + seg * .7, ey - H * .018); x.lineTo(bx + seg, ey); } else x.lineTo(bx + seg, ey); }
+  x.stroke();
+  // typography
+  x.textBaseline = 'alphabetic'; x.fillStyle = '#f2f7fb';
+  const sp = (px) => { try { x.letterSpacing = px + 'px'; } catch (e) {} };
+  x.font = '700 ' + Math.max(9, W * .011 + 6) + 'px ' + sans; sp(3);
+  x.beginPath(); x.arc(pad + 12, pad + 8, 12, 0, 7); x.strokeStyle = 'rgba(235,245,252,.85)'; x.lineWidth = 1; x.stroke();
+  x.fillRect(pad + 11.5, pad - 0, 1, 16); x.fillRect(pad + 4, pad + 7.5, 16, 1);
+  x.fillText('YOUR CLINIC', pad + 34, pad + 13);
+  x.textAlign = 'right'; x.fillStyle = 'rgba(230,242,250,.62)'; x.font = '700 ' + Math.max(8, W * .009 + 5) + 'px ' + sans;
+  x.fillText('A NOTE ON CARE · VOL. 01', W - pad, pad + 13); x.textAlign = 'left';
+  const fs = Math.min(W * (W < 700 ? .152 : .105), H * .125, 168), lh = fs * .9, y0 = H * (W < 700 ? .36 : .38);
+  x.fillStyle = '#c5deef'; x.font = '700 ' + Math.max(9, W * .009 + 5) + 'px ' + sans; sp(3.4);
+  x.fillRect(pad, y0 - fs * .95 - 4, 26, 1); x.fillText('HEALTHCARE, WITH HEART', pad + 38, y0 - fs * .95);
+  sp(-fs * .045); x.fillStyle = '#f4f8fc'; x.font = '500 ' + fs + 'px ' + sans;
+  x.fillText('There is more', pad, y0); x.fillText('to care than', pad, y0 + lh);
+  x.fillStyle = '#b9d9f1'; x.font = 'italic 400 ' + fs + 'px ' + serif; sp(-fs * .03); x.fillText('meets the eye.', pad, y0 + lh * 2);
+  sp(0); x.fillStyle = 'rgba(236,245,251,.78)'; x.font = '400 ' + Math.max(13, Math.min(W * .0125 + 6, 19)) + 'px ' + sans;
+  const dy = y0 + lh * 2 + fs * .5, dl = Math.max(13, Math.min(W * .0125 + 6, 19)) * 1.65;
+  x.fillText('A good experience is built on small things', pad, dy); x.fillText('that make a meaningful difference.', pad, dy + dl);
+  x.font = '700 ' + Math.max(8, W * .008 + 5) + 'px ' + sans; sp(2.6); x.fillStyle = 'rgba(229,241,249,.6)';
+  x.fillText('01 / A DIFFERENT PERSPECTIVE', pad, H - pad * .7); x.textAlign = 'right'; x.fillText('SCROLL TO UNZIP ↓', W - pad, H - pad * .7);
+  return c;
+}
+
+/* ---------- shaders ---------- */
+const COMMON = `
+precision highp float;
+uniform vec2 uRes; uniform float uSide, uP, uK, uR0, uRho, uRmax, uF;
+const float PI = 3.14159265;
+// Forward map of one paper point (o = distance from zip line, y) -> screen xy + height z.
+// The torn edge peels back along a slanted front that starts at the needle tip (uP) and runs up to the top
+// of the page. The roll radius grows along the front, so the curl widens as the sheet is pulled.
+vec3 disp(vec2 o){
+  float ik = inversesqrt(1.0 + uK*uK);
+  float sd = (o.x + uK*(o.y - uP))*ik;
+  float v  = max((uK*o.x - (o.y - uP))*ik, 0.0);
+  float R  = min(uR0 + uRho*v, uRmax);
+  float u = -sd, sdN = sd, z = 0.0;
+  if(u > 0.0){ float th = u/R;
+    if(th <= PI){ sdN = -R*sin(th); z = R*(1.0 - cos(th)); } else { sdN = u - PI*R; z = 2.0*R; } }
+  vec2 q = o + vec2(1.0, uK)*ik*(sdN - sd);
+  return vec3(0.5*uRes.x + uSide*q.x, q.y, z);
+}
+vec2 persp(vec3 p){ vec2 c = 0.5*uRes; return c + (p.xy - c)*(uF/(uF - p.z)); }
+`;
+const VS_MAIN = COMMON + `
+attribute vec2 aU; varying vec2 vUV, vOD; varying vec3 vN; varying float vZ;
+void main(){
+  vec2 o = aU*vec2(0.5*uRes.x, uRes.y);
+  vec3 p = disp(o); float e = 1.5;
+  vec3 pd = disp(o + vec2(e,0.0)) - disp(o - vec2(e,0.0));
+  vec3 py = disp(o + vec2(0.0,e)) - disp(o - vec2(0.0,e));
+  vN = normalize(uSide*cross(pd, py));
+  vec2 s = persp(p);
+  vUV = vec2((0.5*uRes.x + uSide*o.x)/uRes.x, o.y/uRes.y); vOD = o; vZ = p.z;
+  gl_Position = vec4(s.x/uRes.x*2.0 - 1.0, 1.0 - s.y/uRes.y*2.0, -p.z*0.001, 1.0);
+}`;
+const VS_SHADOW = COMMON + `
+attribute vec2 aU; uniform vec2 uJit; varying vec2 vOD; varying float vZ;
+void main(){
+  vec2 o = aU*vec2(0.5*uRes.x, uRes.y);
+  vec3 p = disp(o); vec2 s = persp(p);
+  s += vec2(0.40, 0.58)*p.z + uJit*(1.0 + p.z*0.045);
+  vOD = o; vZ = p.z;
+  gl_Position = vec4(s.x/uRes.x*2.0 - 1.0, 1.0 - s.y/uRes.y*2.0, -0.0006, 1.0);
+}`;
+const FS_COMMON = `
+precision highp float;
+uniform sampler2D uNoise; uniform float uSide, uP; uniform vec2 uRes;
+varying vec2 vOD; varying float vZ;
+float tearRamp(float y){ return smoothstep(0.0, 70.0, uP - y); }
+float tearEdge(float y){
+  float s = uSide*0.37;
+  float n1 = texture2D(uNoise, vec2(y*0.0016 + s, 0.21)).g;
+  float n2 = texture2D(uNoise, vec2(y*0.0067 + 0.31 + s, 0.62)).g;
+  float n3 = texture2D(uNoise, vec2(y*0.031 + 0.7, 0.4 + uSide*0.1)).g;
+  return tearRamp(y)*max(0.0, 5.0 + (n1 - 0.5)*44.0 + (n2 - 0.5)*18.0 + (n3 - 0.5)*7.0);
+}
+float hairs(vec2 o){ return texture2D(uNoise, vec2(o.y*0.19, o.x*0.071 + uSide*0.3)).r; }
+`;
+const FS_MAIN = FS_COMMON + `
+uniform sampler2D uTex; varying vec2 vUV; varying vec3 vN;
+void main(){
+  float e = tearEdge(vOD.y), t = vOD.x - e, h = hairs(vOD);
+  if(tearRamp(vOD.y) > 0.0 && t < h*3.2 - 0.6) discard;
+  vec3 N = normalize(vN); bool back = N.z < 0.0; if(back) N = -N;
+  vec2 gp = vUV*uRes/512.0*0.9;
+  float g0 = texture2D(uNoise, gp).r;
+  float gx = texture2D(uNoise, gp + vec2(1.0/512.0, 0.0)).r - g0, gy = texture2D(uNoise, gp + vec2(0.0, 1.0/512.0)).r - g0;
+  N = normalize(N + vec3(-gx, -gy, 0.0)*0.85);
+  vec3 L = normalize(vec3(-0.45, -0.65, 0.62)), V = vec3(0.0, 0.0, 1.0), H = normalize(L + V);
+  float dif = max(dot(N, L), 0.0)*0.78 + 0.22;
+  float shade = dif/(L.z*0.78 + 0.22);
+  float ndh = max(dot(N, H), 0.0);
+  vec3 tex = texture2D(uTex, vUV).rgb, col;
+  if(!back){
+    float spec = (pow(ndh, 120.0)*0.6 + pow(ndh, 18.0)*0.14)*(0.8 + 0.4*g0);
+    col = tex*shade*(0.965 + 0.07*g0) + vec3(0.88, 0.94, 1.0)*spec;
+  } else {
+    float trans = pow(max(dot(-N, L), 0.0), 1.5)*0.18;
+    vec3 base = mix(vec3(0.958, 0.946, 0.915), tex, 0.085);
+    col = base*(0.52 + shade*0.5 + trans)*(0.965 + 0.07*g0) + vec3(1.0)*pow(ndh, 9.0)*0.05;
+  }
+  float fib = tearRamp(vOD.y)*(1.0 - smoothstep(0.6, 5.5 + h*9.0, t));
+  vec3 fibre = vec3(0.975, 0.968, 0.95)*(back ? shade*0.96 : max(shade, 0.9));
+  col = mix(col, fibre, fib*0.94);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+const FS_SHADOW = FS_COMMON + `
+uniform float uA;
+void main(){
+  float e = tearEdge(vOD.y);
+  if(tearRamp(vOD.y) > 0.0 && vOD.x - e < hairs(vOD)*3.2 - 0.6) discard;
+  float a = uA*(0.3 + 0.7*exp(-vZ/150.0))*smoothstep(0.4, 7.0, vZ);
+  a *= 0.82 + 0.36*texture2D(uNoise, gl_FragCoord.xy/512.0).r; if(a < 0.002) discard;
+  gl_FragColor = vec4(vec3(0.02, 0.05, 0.1)*a, a);
+}`;
+
+function program(vs, fs) {
+  const mk = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+  const p = gl.createProgram(); gl.attachShader(p, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fs)); gl.bindAttribLocation(p, 0, 'aU'); gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const loc = {}; p.u = (n) => loc[n] !== undefined ? loc[n] : (loc[n] = gl.getUniformLocation(p, n)); return p;
+}
+let pMain, pShadow;
+try { pMain = program(VS_MAIN, FS_MAIN); pShadow = program(VS_SHADOW, FS_SHADOW); }
+catch (err) { console.error(err); document.documentElement.classList.add('no-gl'); return; }
+
+/* ---------- mesh (unit square; scaled to one half of the page in the shader) ---------- */
+const COLS = 150, ROWS = 110, verts = new Float32Array((COLS + 1) * (ROWS + 1) * 2), idx = new Uint16Array(COLS * ROWS * 6);
+for (let j = 0, k = 0; j <= ROWS; j++) for (let i = 0; i <= COLS; i++) { verts[k++] = i / COLS; verts[k++] = j / ROWS; }
+for (let j = 0, k = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) { const a = j * (COLS + 1) + i, b = a + 1, c = a + COLS + 1, d = c + 1; idx.set([a, c, b, b, c, d], k); k += 6; }
+const vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo); gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+const ibo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+function makeTex(unit, src, repeat) {
+  const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+  const w = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, w); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, w);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  if (repeat) { gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); }
+  else gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  return t;
+}
+makeTex(1, makeNoiseCanvas(512), true);
+let coverTex = null;
+
+/* ---------- layout / state ---------- */
+let W = 0, H = 0, dpr = 1, K = .5, Ls = 260, p0 = 230, pEnd = 2000;
+const JIT = Array.from({ length: 18 }, (_, i) => { const r = Math.sqrt((i + .5) / 18)*4.6, a = i*2.39996; return [r*Math.cos(a), r*Math.sin(a)]; });
+function layout() {
+  W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr); gl.viewport(0, 0, canvas.width, canvas.height);
+  Ls = Math.max(150, Math.min(H*.26, 270)); syr.style.height = Ls + 'px'; syr.style.width = (Ls*.25) + 'px';
+  K = Math.min(.95, Math.max(.36, W/(2*H)*1.05)); p0 = 0; pEnd = H + (W*.5 + H*.24 + 150)/K;
+  if (coverTex) gl.deleteTexture(coverTex);
+  coverTex = makeTex(0, drawCover(W, H, dpr), false);
+}
+let cur = 0;
+function render(s) {
+  const done = s >= .9995; canvas.style.visibility = done ? 'hidden' : 'visible';
+  const p = p0 + (pEnd - p0)*s;
+  syr.style.display = (p - Ls > H || done) ? 'none' : 'block';
+  syr.style.transform = 'translate(' + (W/2 - Ls*.125).toFixed(1) + 'px,' + (p - Ls).toFixed(1) + 'px)';
+  if (done) return;
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  const set = (pr) => {
+    gl.useProgram(pr); gl.uniform2f(pr.u('uRes'), W, H); gl.uniform1f(pr.u('uP'), p); gl.uniform1f(pr.u('uK'), K);
+    gl.uniform1f(pr.u('uR0'), Math.max(22, H*.034)); gl.uniform1f(pr.u('uRho'), .11 + .05*s); gl.uniform1f(pr.u('uRmax'), H*.27);
+    gl.uniform1f(pr.u('uF'), Math.max(1100, H*1.7)); gl.uniform1i(pr.u('uNoise'), 1);
+  };
+  set(pMain); gl.uniform1i(pMain.u('uTex'), 0);
+  for (const side of [-1, 1]) { gl.uniform1f(pMain.u('uSide'), side); gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0); }
+  set(pShadow); gl.depthMask(false); gl.uniform1f(pShadow.u('uA'), .04);
+  for (const j of JIT) { gl.uniform2f(pShadow.u('uJit'), j[0], j[1]);
+    for (const side of [-1, 1]) { gl.uniform1f(pShadow.u('uSide'), side); gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0); } }
+  gl.depthMask(true);
+}
+
+/* ---------- scroll sync ---------- */
+let target = 0, raf = 0;
+function read() { const range = Math.max(1, track.offsetHeight - stage.clientHeight); target = Math.min(1, Math.max(0, -track.getBoundingClientRect().top/range)); }
+function tick() { cur += (target - cur)*.3; if (Math.abs(target - cur) < .0002) cur = target; render(cur); raf = cur !== target ? requestAnimationFrame(tick) : 0; }
+const kick = () => { read(); if (!raf) raf = requestAnimationFrame(tick); };
+addEventListener('scroll', kick, { passive: true });
+let rt = 0;
+addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (Math.abs(stage.clientWidth - W) > 1 || Math.abs(stage.clientHeight - H) > 80) { layout(); kick(); render(cur); } }, 150); });
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); document.documentElement.classList.add('no-gl'); });
+layout(); read(); cur = target; render(cur);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layout(); render(cur); });
+window.__setProgress = (s) => { cur = target = s; render(s); };  // handy for testing / screenshots
+})();
+</script>
+</body>
+</html>
