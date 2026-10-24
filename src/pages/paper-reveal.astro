@@ -93,8 +93,12 @@ const homeHref = import.meta.env.BASE_URL;
           </footer>
         </article>
 
+        <div class="curl-shadow curl-shadow--left" data-curl-shadow-left aria-hidden="true"></div>
+        <div class="curl-shadow curl-shadow--right" data-curl-shadow-right aria-hidden="true"></div>
         <canvas class="paper-canvas" data-paper-canvas aria-hidden="true"></canvas>
         <div class="fallback-pieces" data-fallback-pieces aria-hidden="true"></div>
+        <div class="curl-glint curl-glint--left" data-curl-glint-left aria-hidden="true"></div>
+        <div class="curl-glint curl-glint--right" data-curl-glint-right aria-hidden="true"></div>
         <div class="reveal-seam" data-reveal-seam aria-hidden="true"></div>
         <div class="engine-note" data-engine-note aria-live="polite">Preparing paper surface</div>
       </div>
@@ -161,9 +165,14 @@ const homeHref = import.meta.env.BASE_URL;
   const canvas = document.querySelector<HTMLCanvasElement>("[data-paper-canvas]");
   const fallbackLayer = document.querySelector<HTMLElement>("[data-fallback-pieces]");
   const seam = document.querySelector<HTMLElement>("[data-reveal-seam]");
+  const leftShadow = document.querySelector<HTMLElement>("[data-curl-shadow-left]");
+  const rightShadow = document.querySelector<HTMLElement>("[data-curl-shadow-right]");
+  const leftGlint = document.querySelector<HTMLElement>("[data-curl-glint-left]");
+  const rightGlint = document.querySelector<HTMLElement>("[data-curl-glint-right]");
   const engineNote = document.querySelector<HTMLElement>("[data-engine-note]");
 
-  if (track && stage && cover && underPage && canvas && fallbackLayer && seam && engineNote) {
+  if (track && stage && cover && underPage && canvas && fallbackLayer && seam &&
+      leftShadow && rightShadow && leftGlint && rightGlint && engineNote) {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const state = { progress: 0 };
     const halves: PaperHalf[] = [];
@@ -179,17 +188,51 @@ const homeHref = import.meta.env.BASE_URL;
     let viewportHeight = 1;
     let captureVersion = 0;
     let resizeCall: ReturnType<typeof gsap.delayedCall> | null = null;
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.35);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
     keyLight.position.set(-420, 520, 680);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.82), keyLight);
-    const fillLight = new THREE.DirectionalLight(0xc3ddf7, 0.76);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.72), keyLight);
+    const fillLight = new THREE.DirectionalLight(0xc3ddf7, 0.86);
     fillLight.position.set(540, -160, 420);
     scene.add(fillLight);
-    // A narrow, bright rim light produces the moving lacquer highlight as the
-    // surface bends. The higher-roughness fill keeps the printed artwork legible.
-    const glossLight = new THREE.DirectionalLight(0xf4faff, 2.15);
+    const glossLight = new THREE.DirectionalLight(0xf4faff, 3.1);
     glossLight.position.set(-180, 320, 900);
     scene.add(glossLight);
+
+    // A procedural studio environment gives clearcoat something to reflect.
+    // Without an environment map, a glossy physical material can still look flat.
+    const environmentCanvas = document.createElement("canvas");
+    environmentCanvas.width = 512;
+    environmentCanvas.height = 256;
+    const environmentContext = environmentCanvas.getContext("2d");
+    if (environmentContext) {
+      const base = environmentContext.createLinearGradient(0, 0, 0, 256);
+      base.addColorStop(0, "#142a40");
+      base.addColorStop(0.36, "#b5cfdf");
+      base.addColorStop(0.5, "#f8fcff");
+      base.addColorStop(0.64, "#7a9db8");
+      base.addColorStop(1, "#091a2d");
+      environmentContext.fillStyle = base;
+      environmentContext.fillRect(0, 0, 512, 256);
+      for (const light of [
+        { x: 92, width: 24, alpha: 0.95 },
+        { x: 218, width: 54, alpha: 0.82 },
+        { x: 371, width: 14, alpha: 0.95 },
+        { x: 445, width: 36, alpha: 0.48 },
+      ]) {
+        const glow = environmentContext.createLinearGradient(light.x - light.width, 0, light.x + light.width, 0);
+        glow.addColorStop(0, "rgba(255,255,255,0)");
+        glow.addColorStop(0.5, "rgba(255,255,255," + light.alpha + ")");
+        glow.addColorStop(1, "rgba(224,244,255,0)");
+        environmentContext.fillStyle = glow;
+        environmentContext.fillRect(light.x - light.width, 0, light.width * 2, 256);
+      }
+    }
+    const environmentTexture = new THREE.CanvasTexture(environmentCanvas);
+    environmentTexture.mapping = THREE.EquirectangularReflectionMapping;
+    environmentTexture.colorSpace = THREE.SRGBColorSpace;
+    environmentTexture.needsUpdate = true;
+    scene.environment = environmentTexture;
+    scene.environmentIntensity = 1.25;
 
     const setNote = (message: string) => { engineNote.textContent = message; };
 
@@ -234,21 +277,23 @@ const homeHref = import.meta.env.BASE_URL;
 
       const frontMaterial = new THREE.MeshPhysicalMaterial({
         map: texture,
-        roughness: 0.28,
+        roughness: 0.18,
         metalness: 0,
-        clearcoat: 0.94,
-        clearcoatRoughness: 0.12,
-        sheen: 0.16,
-        sheenRoughness: 0.24,
+        clearcoat: 1,
+        clearcoatRoughness: 0.055,
+        sheen: 0.12,
+        sheenRoughness: 0.16,
         specularIntensity: 1,
+        envMapIntensity: 1.55,
         side: THREE.FrontSide,
       });
       const backMaterial = new THREE.MeshPhysicalMaterial({
         color: 0xdce5ee,
-        roughness: 0.38,
+        roughness: 0.26,
         metalness: 0,
-        clearcoat: 0.68,
-        clearcoatRoughness: 0.18,
+        clearcoat: 0.92,
+        clearcoatRoughness: 0.08,
+        envMapIntensity: 1.15,
         side: THREE.BackSide,
       });
       const front = new THREE.Mesh(geometry, frontMaterial);
@@ -301,25 +346,25 @@ const homeHref = import.meta.env.BASE_URL;
       return half;
     };
 
-    // The sheet turns around its central split, but the curl is localized near
-    // that split instead of dragging the entire sheet sideways. X is integrated
-    // along the paper; Z forms a rolled lip that fades back to the flat sheet.
+    // Integrate a changing tangent along the sheet to build a real rolled
+    // cross-section, not a flat plane with a hinge rotation. As the scroll moves,
+    // the curl broadens from the centre slit across more of each half.
     const mapCurl = (distance: number, halfWidth: number, progress: number) => {
-      if (progress <= 0) return { x: distance, z: 0, angle: 0 };
-      const rollRadius = Math.max(halfWidth * (0.06 + progress * 0.16), 1);
-      const maxAngle = Math.PI * 0.46 * Math.pow(progress, 1.12);
-      const segments = Math.max(16, Math.ceil((distance / halfWidth) * 100));
+      if (progress <= 0 || distance <= 0) return { x: distance, z: 0, angle: 0 };
+      const rollRadius = Math.max(halfWidth * (0.12 + progress * 0.78), 1);
+      const maxAngle = 2.78 * Math.pow(progress, 1.08);
+      const segments = Math.max(20, Math.ceil((distance / halfWidth) * 128));
       const step = distance / segments;
       let mappedX = 0;
+      let mappedZ = 0;
       for (let index = 0; index < segments; index += 1) {
         const q = (index + 0.5) * step;
         const theta = maxAngle * Math.exp(-q / rollRadius);
         mappedX += Math.cos(theta) * step;
+        mappedZ += Math.sin(theta) * step;
       }
       const angle = maxAngle * Math.exp(-distance / rollRadius);
-      const localizedLip = rollRadius * Math.sin(angle) *
-        Math.exp(-distance / (rollRadius * 1.4));
-      return { x: mappedX, z: localizedLip, angle };
+      return { x: mappedX, z: mappedZ, angle };
     };
 
     const updateHalf = (half: PaperHalf, progress: number) => {
@@ -328,9 +373,7 @@ const homeHref = import.meta.env.BASE_URL;
       const segmentCount = half.geometry.parameters.widthSegments;
       const halfWidth = half.width;
       const height = half.height;
-      const hingeAngle = progress * Math.PI * 0.48;
-      const hingeCos = Math.cos(hingeAngle);
-      const hingeSin = Math.sin(hingeAngle);
+      const outwardDrift = halfWidth * Math.pow(progress, 2.35);
       const columnMap: Array<{ x: number; z: number }> = [];
 
       for (let column = 0; column <= segmentCount; column += 1) {
@@ -348,15 +391,14 @@ const homeHref = import.meta.env.BASE_URL;
         const mapped = columnMap[column];
         const vertical = Math.min(1, Math.max(0, (baseY + height / 2) / height));
         const edgeWeight = Math.sin(vertical * Math.PI);
-        const smallRipple = Math.sin(vertical * Math.PI * 4 + columnT * 2.4) *
-          progress * edgeWeight * 1.45;
+        const smallRipple = Math.sin(vertical * Math.PI * 3.2 + columnT * 2.4) *
+          progress * edgeWeight * (1.8 + progress * 3.4);
 
-        // Mirror the two sides across the split (X changes sign; depth does not).
-        // Hinge rotation is applied around the slit, not around each panel's centre.
-        vertices[offset] = -half.side * halfWidth / 2 +
-          half.side * (mapped.x * hingeCos + mapped.z * hingeSin);
+        // X mirrors about the split, but both halves use the same Z displacement:
+        // they roll toward the same depth direction instead of twisting oppositely.
+        vertices[offset] = -half.side * halfWidth / 2 + half.side * mapped.x;
         vertices[offset + 1] = baseY + smallRipple;
-        vertices[offset + 2] = -mapped.x * hingeSin + mapped.z * hingeCos;
+        vertices[offset + 2] = mapped.z;
       }
 
       position.needsUpdate = true;
@@ -366,6 +408,9 @@ const homeHref = import.meta.env.BASE_URL;
       const edgePosition = half.edgeGeometry.attributes.position as THREE.BufferAttribute;
       const edgeVertices = edgePosition.array as Float32Array;
       const seamMap = mapCurl(0, half.width, progress);
+      const seamAngle = seamMap.angle;
+      const edgeNormalX = -half.side * Math.sin(seamAngle);
+      const edgeNormalZ = Math.cos(seamAngle);
       for (let row = 0; row <= half.edgeRows; row += 1) {
         const baseY = half.height / 2 - (row / half.edgeRows) * half.height;
         const vertical = Math.min(1, Math.max(0, (baseY + half.height / 2) / half.height));
@@ -373,21 +418,20 @@ const homeHref = import.meta.env.BASE_URL;
           Math.sin(vertical * Math.PI) * 1.45;
         for (let bank = 0; bank < 2; bank += 1) {
           const offset = (row * 2 + bank) * 3;
-          const thicknessOffset = bank === 0 ? -0.9 : 0.9;
-          const localZ = seamMap.z + thicknessOffset;
-          edgeVertices[offset] = -half.side * half.width / 2 +
-            half.side * (seamMap.x * hingeCos + localZ * hingeSin);
+          const thicknessOffset = bank === 0 ? -1.4 : 1.4;
+          const edgeX = half.side < 0 ? half.width / 2 : -half.width / 2;
+          edgeVertices[offset] = edgeX + edgeNormalX * thicknessOffset;
           edgeVertices[offset + 1] = baseY + ripple;
-          edgeVertices[offset + 2] = -seamMap.x * hingeSin + localZ * hingeCos;
+          edgeVertices[offset + 2] = edgeNormalZ * thicknessOffset;
         }
       }
       edgePosition.needsUpdate = true;
       half.edgeGeometry.computeVertexNormals();
       half.edge.material.opacity = Math.min(0.96, progress * 3.6) * (1 - progress * 0.14);
 
-      // Keep each mesh anchored to the centre slit. The curved vertex positions
-      // perform the turn; there is deliberately no whole-panel sideways drift.
-      half.front.position.set(half.side * half.width / 2, 0, 0);
+      // A late, eased outward sweep carries the already-curved sheet off-screen.
+      // The motion follows the roll; it does not substitute for the deformation.
+      half.front.position.set(half.side * (half.width / 2 + outwardDrift), 0, 0);
       half.back.position.copy(half.front.position);
       half.edge.position.copy(half.front.position);
       half.front.rotation.set(0, 0, 0);
@@ -399,6 +443,23 @@ const homeHref = import.meta.env.BASE_URL;
       state.progress = Math.max(0, Math.min(1, rawProgress));
       const progress = state.progress;
       const pageIsRevealed = progress >= 0.985 || activeMode === "reduced";
+
+      const shadowTravel = viewportWidth * 0.38 * Math.pow(progress, 1.8);
+      const shadowOpacity = Math.max(0, Math.sin(progress * Math.PI)) * 0.52;
+      const glintTravel = viewportWidth * 0.40 * Math.pow(progress, 1.9);
+      const glintOpacity = Math.min(0.92, progress * 2.8) * (1 - progress * 0.72);
+      leftShadow.style.left = (viewportWidth / 2 - shadowTravel) + "px";
+      rightShadow.style.left = (viewportWidth / 2 + shadowTravel) + "px";
+      leftShadow.style.opacity = String(shadowOpacity);
+      rightShadow.style.opacity = String(shadowOpacity);
+      leftShadow.style.transform = "translateX(-50%) scaleX(" + (0.7 + progress * 0.85) + ")";
+      rightShadow.style.transform = "translateX(-50%) scaleX(" + (0.7 + progress * 0.85) + ")";
+      leftGlint.style.left = (viewportWidth / 2 - glintTravel) + "px";
+      rightGlint.style.left = (viewportWidth / 2 + glintTravel) + "px";
+      leftGlint.style.opacity = String(glintOpacity);
+      rightGlint.style.opacity = String(glintOpacity);
+      leftGlint.style.transform = "translateX(-50%) scaleY(" + (0.75 + progress * 0.25) + ")"; 
+      rightGlint.style.transform = "translateX(-50%) scaleY(" + (0.75 + progress * 0.25) + ")";
       underPage.inert = !pageIsRevealed;
       if (pageIsRevealed) {
         underPage.removeAttribute("aria-hidden");
@@ -415,25 +476,22 @@ const homeHref = import.meta.env.BASE_URL;
         renderer.render(scene, camera);
       } else if (activeMode === "fallback") {
         const halfWidth = viewportWidth / 2;
-        const hingeAngle = progress * Math.PI * 0.48;
-        const hingeCos = Math.cos(hingeAngle);
-        const hingeSin = Math.sin(hingeAngle);
+        const outwardDrift = halfWidth * Math.pow(progress, 2.35);
         for (const piece of fallbackPieces) {
           piece.style.setProperty("--progress", String(progress));
         }
         for (const strip of fallbackStrips) {
           const mapped = mapCurl(strip.distance, halfWidth, progress);
-          const projectedDistance = mapped.x * hingeCos + mapped.z * hingeSin;
-          const desiredCenterX = viewportWidth / 2 + strip.side * projectedDistance;
+          const desiredCenterX = viewportWidth / 2 + strip.side * (mapped.x + outwardDrift);
           const translateX = desiredCenterX - strip.baseCenterX;
-          const translateZ = -mapped.x * hingeSin + mapped.z * hingeCos;
-          const shade = Math.min(0.7, progress * 0.42 + Math.abs(Math.sin(mapped.angle)) * 0.32);
+          const translateZ = mapped.z;
+          const shade = Math.min(0.78, progress * 0.46 + Math.abs(Math.sin(mapped.angle)) * 0.4);
           const gloss = Math.max(0, Math.cos(mapped.angle - 0.72)) * progress;
           strip.element.style.setProperty("--curl-shade", String(shade));
           strip.element.style.setProperty("--curl-gloss", String(gloss));
           strip.element.style.transform =
             "translate3d(" + translateX + "px, 0, " + translateZ + "px) rotateY(" +
-            (strip.side * (hingeAngle - mapped.angle)) + "rad)";
+            (-strip.side * mapped.angle) + "rad)";
           strip.element.style.opacity = progress >= 0.999 ? "0" : "1";
         }
       }
@@ -710,8 +768,13 @@ const homeHref = import.meta.env.BASE_URL;
   .cover-index strong { color:#f2f7fb; font-size:15px; font-weight:600; letter-spacing:-.02em; }
   .scroll-cue { display:flex; align-items:center; gap:12px; color:rgba(236,245,251,.8); font-size:9px; font-weight:700; letter-spacing:.16em; }
   .scroll-arrow { display:grid; place-items:center; width:32px; height:32px; border:1px solid rgba(234,244,251,.4); border-radius:50%; color:#f4f8fc; font-size:15px; }
-  .paper-canvas { position:absolute; z-index:4; inset:0; display:block; width:100%; height:100%; opacity:0; pointer-events:none; filter:drop-shadow(0 9px 10px rgba(3,16,32,.34)) drop-shadow(0 1px 2px rgba(220,241,255,.28)); transition:opacity .12s linear; }
+  .curl-shadow { position:absolute; z-index:3; top:-4%; bottom:-4%; width:clamp(42px,7vw,110px); pointer-events:none; opacity:0; background:radial-gradient(ellipse at center,rgba(1,12,24,.52) 0%,rgba(3,17,32,.34) 28%,rgba(6,22,38,.1) 55%,transparent 76%); filter:blur(9px); mix-blend-mode:multiply; will-change:left,opacity,transform; }
+  .curl-shadow--left { left:50%; }
+  .curl-shadow--right { left:50%; }
+  .paper-canvas { position:absolute; z-index:4; inset:0; display:block; width:100%; height:100%; opacity:0; pointer-events:none; filter:drop-shadow(0 12px 16px rgba(3,16,32,.42)) drop-shadow(0 2px 3px rgba(220,241,255,.32)); transition:opacity .12s linear; }
   .fallback-pieces { position:absolute; z-index:4; inset:0; opacity:0; pointer-events:none; perspective:1600px; }
+  .curl-glint { position:absolute; z-index:5; top:0; bottom:0; width:clamp(28px,4.6vw,72px); pointer-events:none; opacity:0; background:linear-gradient(90deg,transparent 0%,rgba(188,222,246,.08) 18%,rgba(244,251,255,.72) 48%,rgba(255,255,255,.28) 58%,rgba(161,210,244,.1) 80%,transparent 100%); filter:blur(4px); mix-blend-mode:screen; will-change:left,opacity,transform; }
+  .curl-glint--left, .curl-glint--right { left:50%; }
   .fallback-piece { position:absolute; top:0; width:50%; height:100%; overflow:visible; transform-style:preserve-3d; }
   .fallback-piece--left { left:0; }
   .fallback-piece--right { left:50%; right:auto; }
@@ -724,7 +787,7 @@ const homeHref = import.meta.env.BASE_URL;
   .fallback-strip::after { content:""; position:absolute; inset:-1px; z-index:60; pointer-events:none; background:linear-gradient(90deg,transparent 2%,rgba(240,250,255,.9) 46%,rgba(255,255,255,.06) 58%,transparent 100%); opacity:var(--curl-gloss,0); mix-blend-mode:screen; }
   .fallback-strip-back { position:absolute; inset:0; z-index:40; pointer-events:none; background:linear-gradient(115deg,#afc4d5 0%,#f7fcff 20%,#c6d8e6 39%,#ffffff 49%,#a9c0d3 73%,#eaf4fa 100%); transform:rotateY(180deg) translateZ(.2px); backface-visibility:hidden; }
   .cover-artwork--clone { max-width:none !important; }
-  .reveal-seam { position:absolute; z-index:5; top:0; bottom:0; left:50%; width:1px; pointer-events:none; opacity:0; background:linear-gradient(180deg,transparent 2%,rgba(235,246,255,.88) 18%,rgba(7,26,48,.55) 52%,rgba(235,246,255,.68) 82%,transparent 100%); box-shadow:0 0 11px rgba(2,13,28,.28); }
+  .reveal-seam { position:absolute; z-index:6; top:0; bottom:0; left:50%; width:1px; pointer-events:none; opacity:0; background:linear-gradient(180deg,transparent 2%,rgba(235,246,255,.88) 18%,rgba(7,26,48,.55) 52%,rgba(235,246,255,.68) 82%,transparent 100%); box-shadow:0 0 11px rgba(2,13,28,.28); }
   .engine-note { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .continuation { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr); column-gap:clamp(30px,8vw,120px); align-items:end; padding:clamp(72px,11vw,156px) clamp(24px,10vw,150px) 44px; background:#f1efe9; color:#172735; }
   .continuation-heading h2 { font-size:clamp(3rem,7vw,6.7rem); }
