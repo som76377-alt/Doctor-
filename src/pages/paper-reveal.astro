@@ -123,22 +123,31 @@ const homeHref = import.meta.env.BASE_URL;
 
 <script>
   // Native HTML/CSS paper curl. No canvas renderer or animation libraries.
-  const track = document.querySelector("[data-reveal-track]");
-  const stage = document.querySelector("[data-reveal-stage]");
-  const cover = document.querySelector("[data-cover-artwork]");
-  const underPage = document.querySelector("[data-under-page]");
-  const fallbackLayer = document.querySelector("[data-fallback-pieces]");
-  const seam = document.querySelector("[data-reveal-seam]");
+  type Side = -1 | 1;
+  type CurlPoint = { x: number; z: number; angle: number };
+  type PaperStrip = {
+    element: HTMLDivElement;
+    side: Side;
+    distance: number;
+    baseCenterX: number;
+  };
+
+  const track = document.querySelector<HTMLElement>("[data-reveal-track]");
+  const stage = document.querySelector<HTMLElement>("[data-reveal-stage]");
+  const cover = document.querySelector<HTMLElement>("[data-cover-artwork]");
+  const underPage = document.querySelector<HTMLElement>("[data-under-page]");
+  const fallbackLayer = document.querySelector<HTMLElement>("[data-fallback-pieces]");
+  const seam = document.querySelector<HTMLElement>("[data-reveal-seam]");
 
   if (track && stage && cover && underPage && fallbackLayer && seam) {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const strips = [];
+    const strips: PaperStrip[] = [];
     let viewportWidth = 1;
     let viewportHeight = 1;
     let frame = 0;
     let progress = 0;
 
-    const mapCurl = (distance, halfWidth, amount) => {
+    const mapCurl = (distance: number, halfWidth: number, amount: number): CurlPoint => {
       if (amount <= 0 || distance <= 0) return { x: distance, z: 0, angle: 0 };
       const segments = Math.max(16, Math.ceil((distance / halfWidth) * 84));
       const step = distance / segments;
@@ -157,7 +166,7 @@ const homeHref = import.meta.env.BASE_URL;
       return { x, z, angle: maxAngle * Math.exp(-distance / rollRadius) };
     };
 
-    const buildPaper = () => {
+    const buildPaper = (): void => {
       viewportWidth = Math.max(1, stage.clientWidth);
       viewportHeight = Math.max(1, stage.clientHeight);
       fallbackLayer.replaceChildren();
@@ -167,7 +176,7 @@ const homeHref = import.meta.env.BASE_URL;
       const stripCount = 96;
       const stripWidth = halfWidth / stripCount;
 
-      for (const side of [-1, 1]) {
+      for (const side of [-1, 1] as Side[]) {
         const piece = document.createElement("div");
         piece.className = "fallback-piece " +
           (side < 0 ? "fallback-piece--left" : "fallback-piece--right");
@@ -189,11 +198,13 @@ const homeHref = import.meta.env.BASE_URL;
           strip.style.width = stripWidth + "px";
           strip.style.height = viewportHeight + "px";
 
-          const front = cover.cloneNode(true);
+          const front = cover.cloneNode(true) as HTMLElement;
           front.removeAttribute("data-cover-artwork");
           front.removeAttribute("aria-labelledby");
           front.setAttribute("aria-hidden", "true");
-          front.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+          front.querySelectorAll<HTMLElement>("[id]").forEach((element) => {
+            element.removeAttribute("id");
+          });
           front.classList.add("cover-artwork--clone");
           front.style.position = "absolute";
           front.style.inset = "0 auto auto 0";
@@ -223,7 +234,7 @@ const homeHref = import.meta.env.BASE_URL;
       render(progress);
     };
 
-    const render = (rawProgress) => {
+    const render = (rawProgress: number): void => {
       progress = Math.max(0, Math.min(1, rawProgress));
       const complete = progress >= 0.985;
 
@@ -268,7 +279,7 @@ const homeHref = import.meta.env.BASE_URL;
       }
     };
 
-    const scrollProgress = () => {
+    const scrollProgress = (): void => {
       frame = 0;
       if (reduceMotion.matches) return;
       const travel = Math.max(1, track.offsetHeight - stage.clientHeight);
@@ -276,7 +287,7 @@ const homeHref = import.meta.env.BASE_URL;
       render(passed / travel);
     };
 
-    const scheduleRender = () => {
+    const scheduleRender = (): void => {
       if (!frame) frame = window.requestAnimationFrame(scrollProgress);
     };
 
