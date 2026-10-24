@@ -455,12 +455,8 @@ const homeHref = import.meta.env.BASE_URL;
       state.progress = Math.max(0, Math.min(1, rawProgress));
       const progress = state.progress;
       const pageIsRevealed = progress >= 0.985 || activeMode === "reduced";
-
-      // Highlights and shadows should separate early, following the new curl.
-      // The old exponents near 2 left them stacked as a narrow central line.
+      // Broad specular highlights travel with the curl; these affect lighting only, not fold geometry.
       const highlightProgress = Math.pow(progress, 0.42);
-      // The shadow trails inside a wider, softer reflection. Both appear early
-      // and move with the curl instead of beginning as a short painted stripe.
       const shadowTravel = viewportWidth * 0.34 * highlightProgress;
       const shadowOpacity = Math.pow(progress, 0.45) *
         Math.max(0, 1 - Math.pow(progress, 2.3)) * 0.68;
@@ -498,7 +494,6 @@ const homeHref = import.meta.env.BASE_URL;
         renderer.render(scene, camera);
       } else if (activeMode === "fallback") {
         const halfWidth = viewportWidth / 2;
-        // Keep the same restrained travel as the original curl.
         const reveal = progress * progress;
         const outwardDrift = viewportWidth * 0.55 * reveal;
         for (const piece of fallbackPieces) {
@@ -511,8 +506,7 @@ const homeHref = import.meta.env.BASE_URL;
           const translateZ = strip.side < 0 ? mapped.z : -mapped.z;
           const turnAngle = -strip.side * mapped.angle;
           const shade = Math.min(0.58, progress * 0.4 + Math.abs(Math.sin(mapped.angle)) * 0.25);
-          const gloss = Math.max(0, Math.cos(Math.abs(mapped.angle) - 0.72)) *
-            Math.pow(progress, 0.35);
+          const gloss = Math.max(0, Math.cos(Math.abs(mapped.angle) - 0.72)) * Math.pow(progress, 0.35);
           strip.element.style.setProperty("--curl-shade", String(shade));
           strip.element.style.setProperty("--curl-gloss", String(gloss));
           strip.element.style.transform =
