@@ -351,20 +351,24 @@ const homeHref = import.meta.env.BASE_URL;
     // the curl broadens from the centre slit across more of each half.
     const mapCurl = (distance: number, halfWidth: number, progress: number) => {
       if (progress <= 0) return { x: distance, z: 0, angle: 0 };
-      const rollRadius = Math.max(halfWidth * (0.18 + progress * 0.75), 1);
-      const maxAngle = 2.05 * Math.pow(progress, 1.08);
-      if (distance <= 0) return { x: 0, z: 0, angle: maxAngle };
+      // Ease the bend in faster than linear so the first scroll increments already
+      // create a broad curl, instead of a tiny centre lip.
+      const curlProgress = Math.pow(progress, 0.68);
+      const rollRadius = Math.max(halfWidth * (0.18 + curlProgress * 0.75), 1);
+      const maxAngle = 2.05 * Math.pow(curlProgress, 1.08);
+      if (distance <= 0) return { x: 0, z: 0, angle: -maxAngle };
       const segments = Math.max(20, Math.ceil((distance / halfWidth) * 128));
       const step = distance / segments;
       let mappedX = 0;
       let mappedZ = 0;
       for (let index = 0; index < segments; index += 1) {
         const q = (index + 0.5) * step;
-        const theta = maxAngle * Math.exp(-q / rollRadius);
+        // Negative signed curvature reverses the roll so both halves peel outward.
+        const theta = -maxAngle * Math.exp(-q / rollRadius);
         mappedX += Math.cos(theta) * step;
         mappedZ += Math.sin(theta) * step;
       }
-      const angle = maxAngle * Math.exp(-distance / rollRadius);
+      const angle = -maxAngle * Math.exp(-distance / rollRadius);
       return { x: mappedX, z: mappedZ, angle };
     };
 
@@ -395,8 +399,8 @@ const homeHref = import.meta.env.BASE_URL;
         const smallRipple = Math.sin(vertical * Math.PI * 3.2 + columnT * 2.4) *
           progress * edgeWeight * (1.8 + progress * 3.4);
 
-        // X mirrors about the split, but both halves use the same Z displacement:
-        // they roll toward the same depth direction instead of twisting oppositely.
+        // X mirrors about the split and signed depth follows the reversed curl:
+        // both sides roll outward symmetrically rather than folding into the centre.
         vertices[offset] = -half.side * halfWidth / 2 + half.side * mapped.x;
         vertices[offset + 1] = baseY + smallRipple;
         vertices[offset + 2] = mapped.z;
@@ -445,10 +449,14 @@ const homeHref = import.meta.env.BASE_URL;
       const progress = state.progress;
       const pageIsRevealed = progress >= 0.985 || activeMode === "reduced";
 
-      const shadowTravel = viewportWidth * 0.38 * Math.pow(progress, 1.8);
-      const shadowOpacity = Math.max(0, Math.sin(progress * Math.PI)) * 0.52;
-      const glintTravel = viewportWidth * 0.54 * Math.pow(progress, 1.9);
-      const glintOpacity = Math.max(0, Math.sin(progress * Math.PI)) * 0.9;
+      // Highlights and shadows should separate early, following the new curl.
+      // The old exponents near 2 left them stacked as a narrow central line.
+      const highlightProgress = Math.pow(progress, 0.68);
+      const shadowTravel = viewportWidth * 0.34 * Math.pow(progress, 0.78);
+      const shadowOpacity = Math.max(0, Math.sin(progress * Math.PI)) * 0.58;
+      const glintTravel = viewportWidth * 0.48 * highlightProgress;
+      const glintOpacity = Math.max(0, Math.sin(progress * Math.PI)) * 0.82;
+      const glintWidth = Math.min(200, Math.max(62, viewportWidth * (0.22 - progress * 0.11)));
       leftShadow.style.left = (viewportWidth / 2 - shadowTravel) + "px";
       rightShadow.style.left = (viewportWidth / 2 + shadowTravel) + "px";
       leftShadow.style.opacity = String(shadowOpacity);
@@ -457,6 +465,8 @@ const homeHref = import.meta.env.BASE_URL;
       rightShadow.style.transform = "translateX(-50%) scaleX(" + (0.7 + progress * 0.85) + ")";
       leftGlint.style.left = (viewportWidth / 2 - glintTravel) + "px";
       rightGlint.style.left = (viewportWidth / 2 + glintTravel) + "px";
+      leftGlint.style.width = glintWidth + "px";
+      rightGlint.style.width = glintWidth + "px";
       leftGlint.style.opacity = String(glintOpacity);
       rightGlint.style.opacity = String(glintOpacity);
       leftGlint.style.transform = "translateX(-50%) scaleY(" + (0.75 + progress * 0.25) + ")"; 
@@ -769,12 +779,12 @@ const homeHref = import.meta.env.BASE_URL;
   .cover-index strong { color:#f2f7fb; font-size:15px; font-weight:600; letter-spacing:-.02em; }
   .scroll-cue { display:flex; align-items:center; gap:12px; color:rgba(236,245,251,.8); font-size:9px; font-weight:700; letter-spacing:.16em; }
   .scroll-arrow { display:grid; place-items:center; width:32px; height:32px; border:1px solid rgba(234,244,251,.4); border-radius:50%; color:#f4f8fc; font-size:15px; }
-  .curl-shadow { position:absolute; z-index:3; top:-4%; bottom:-4%; width:clamp(42px,7vw,110px); pointer-events:none; opacity:0; background:radial-gradient(ellipse at center,rgba(1,12,24,.52) 0%,rgba(3,17,32,.34) 28%,rgba(6,22,38,.1) 55%,transparent 76%); filter:blur(9px); mix-blend-mode:multiply; will-change:left,opacity,transform; }
+  .curl-shadow { position:absolute; z-index:3; top:-5%; bottom:-5%; width:clamp(64px,13vw,180px); pointer-events:none; opacity:0; background:radial-gradient(ellipse at center,rgba(1,12,24,.45) 0%,rgba(3,17,32,.31) 24%,rgba(6,22,38,.11) 52%,transparent 78%); filter:blur(15px); mix-blend-mode:multiply; will-change:left,opacity,transform; }
   .curl-shadow--left { left:50%; }
   .curl-shadow--right { left:50%; }
   .paper-canvas { position:absolute; z-index:4; inset:0; display:block; width:100%; height:100%; opacity:0; pointer-events:none; filter:drop-shadow(0 12px 16px rgba(3,16,32,.42)) drop-shadow(0 2px 3px rgba(220,241,255,.32)); transition:opacity .12s linear; }
   .fallback-pieces { position:absolute; z-index:4; inset:0; opacity:0; pointer-events:none; perspective:1600px; }
-  .curl-glint { position:absolute; z-index:5; top:0; bottom:0; width:clamp(28px,4.6vw,72px); pointer-events:none; opacity:0; background:linear-gradient(90deg,transparent 0%,rgba(188,222,246,.08) 18%,rgba(244,251,255,.72) 48%,rgba(255,255,255,.28) 58%,rgba(161,210,244,.1) 80%,transparent 100%); filter:blur(4px); mix-blend-mode:screen; will-change:left,opacity,transform; }
+  .curl-glint { position:absolute; z-index:5; top:-2%; bottom:-2%; width:clamp(62px,12vw,180px); pointer-events:none; opacity:0; background:linear-gradient(90deg,transparent 0%,rgba(188,222,246,.08) 12%,rgba(214,237,252,.25) 30%,rgba(244,251,255,.58) 46%,rgba(255,255,255,.65) 52%,rgba(190,225,250,.24) 70%,rgba(161,210,244,.06) 86%,transparent 100%); filter:blur(9px); mix-blend-mode:screen; will-change:left,opacity,transform; }
   .curl-glint--left, .curl-glint--right { left:50%; }
   .fallback-piece { position:absolute; top:0; width:50%; height:100%; overflow:visible; transform-style:preserve-3d; }
   .fallback-piece--left { left:0; }
