@@ -723,7 +723,7 @@ const homeHref = import.meta.env.BASE_URL;
           const pixelRatioChanged = renderer !== null &&
             Math.abs(renderer.getPixelRatio() - nextPixelRatio) > 0.01;
 
-          // Mobile browser chrome can fire resize while the lvh-sized stage stays
+          // Mobile browser chrome can fire resize while the small-viewport-sized stage stays
           // the same. Rebuilding the canvas then causes the scroll-scrubbed sheet
           // to jump. Ignore chrome-only changes; resize only for real layout changes.
           if (!dimensionsChanged && !pixelRatioChanged) return;
@@ -848,7 +848,7 @@ const homeHref = import.meta.env.BASE_URL;
 
   @media (max-width:680px) {
     .back-link { top:18px; left:20px; font-size:11px; }
-    .reveal-stage { min-height:100lvh; }
+    .reveal-stage { min-height:100svh; }
     .under-page { padding:24px 24px 20px; }
     .under-label { max-width:118px; text-align:right; line-height:1.5; }
     .under-content { padding:25px 0; }
@@ -892,8 +892,8 @@ const homeHref = import.meta.env.BASE_URL;
 
   @media (prefers-reduced-motion: reduce) {
     .reveal-track { height:auto; }
-    .reveal-stage { position:relative; height:auto; min-height:100lvh; }
+    .reveal-stage { position:relative; height:auto; min-height:100svh; }
     .cover-artwork, .paper-canvas, .fallback-pieces, .reveal-seam, .engine-note { display:none !important; }
-    .under-page { position:relative; min-height:100lvh; }
+    .under-page { position:relative; min-height:100svh; }
   }
 </style>
