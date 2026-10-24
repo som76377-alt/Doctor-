@@ -131,7 +131,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 </BaseLayout>
 
 <script>
-  import { PageFlip } from "page-flip";
+  // Use the standalone paper-reveal curl geometry on the existing four-page clinic book.
+  type Side = -1 | 1;
+  type CurlPoint = { x: number; z: number; angle: number };
+  type CurlStrip = { element: HTMLDivElement; side: Side; distance: number; baseCenterX: number };
 
   const startClinicBook = () => {
     const book = document.querySelector<HTMLElement>("#clinic-book");
@@ -140,75 +143,200 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     const count = document.querySelector<HTMLElement>(".page-status-count");
     const fill = document.querySelector<HTMLElement>(".page-status-fill");
     if (!book || !previous || !next || !count || !fill || book.dataset.ready === "true") return;
-
     const pages = Array.from(book.querySelectorAll<HTMLElement>(".clinic-book-page"));
-    if (pages.length < 2) return;
+    if (!pages.length) return;
 
-    const pageFlip = new PageFlip(book, {
-      width: Math.max(280, book.clientWidth),
-      height: Math.max(420, book.clientHeight),
-      size: "stretch",
-      minWidth: 280,
-      maxWidth: 1600,
-      minHeight: 480,
-      maxHeight: 1200,
-      drawShadow: true,
-      maxShadowOpacity: 0.58,
-      flippingTime: 480,
-      usePortrait: true,
-      startPage: 0,
-      autoSize: false,
-      showCover: false,
-      mobileScrollSupport: false,
-      swipeDistance: 2,
-      clickEventForward: true,
-      useMouseEvents: true,
-      showPageCorners: true,
-      disableFlipByClick: false
-    });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let currentPage = 0;
+    let busy = false;
 
-    pageFlip.loadFromHTML(pages);
-    book.dataset.ready = "true";
+    const setPage = (index: number) => {
+      currentPage = Math.max(0, Math.min(pages.length - 1, index));
+      pages.forEach((page, pageIndex) => {
+        const active = pageIndex === currentPage;
+        page.style.display = active ? "block" : "none";
+        page.setAttribute("aria-hidden", active ? "false" : "true");
+        if (active) page.removeAttribute("inert");
+        else page.setAttribute("inert", "");
+      });
+      count.textContent = String(currentPage + 1).padStart(2, "0") + " / " + String(pages.length).padStart(2, "0");
+      fill.style.width = (((currentPage + 1) / pages.length) * 100).toFixed(2) + "%";
+      previous.disabled = currentPage === 0 || busy;
+      next.disabled = currentPage >= pages.length - 1 || busy;
+      book.dataset.currentPage = String(currentPage);
+    };
 
-    const pageTargets = { "#top": 0, "#approach": 1, "#doctor": 2, "#contact": 3 };
+    const mapCurl = (distance: number, halfWidth: number, amount: number): CurlPoint => {
+      if (amount <= 0 || distance <= 0) return { x: distance, z: 0, angle: 0 };
+      const segments = Math.max(16, Math.ceil((distance / halfWidth) * 84));
+      const step = distance / segments;
+      const rollRadius = Math.max(halfWidth * (0.11 + amount * 0.43), 1);
+      const maxAngle = 0.08 + 3.35 * Math.pow(amount, 1.18);
+      let x = 0;
+      let z = 0;
+      for (let index = 0; index < segments; index += 1) {
+        const along = (index + 0.5) * step;
+        const angle = maxAngle * Math.exp(-along / rollRadius);
+        x += Math.cos(angle) * step;
+        z += Math.sin(angle) * step;
+      }
+      return { x, z, angle: maxAngle * Math.exp(-distance / rollRadius) };
+    };
+
+    const turnTo = (requestedIndex: number) => {
+      const targetIndex = Math.max(0, Math.min(pages.length - 1, requestedIndex));
+      if (busy || targetIndex === currentPage) return;
+      const outgoing = pages[currentPage];
+      const incoming = pages[targetIndex];
+      if (!outgoing || !incoming) return;
+      if (reduceMotion.matches) { setPage(targetIndex); return; }
+
+      busy = true;
+      previous.disabled = true;
+      next.disabled = true;
+      const viewportWidth = Math.max(1, book.clientWidth);
+      const viewportHeight = Math.max(1, book.clientHeight);
+      const halfWidth = viewportWidth / 2;
+      const stripCount = 96;
+      const stripWidth = halfWidth / stripCount;
+      const layer = document.createElement("div");
+      layer.className = "clinic-curl-layer";
+      layer.setAttribute("aria-hidden", "true");
+      const strips: CurlStrip[] = [];
+      const pieces: HTMLDivElement[] = [];
+
+      const frontTemplate = outgoing.cloneNode(true) as HTMLElement;
+      frontTemplate.classList.add("clinic-page-curl-clone");
+      frontTemplate.removeAttribute("id");
+      frontTemplate.removeAttribute("aria-labelledby");
+      frontTemplate.setAttribute("aria-hidden", "true");
+      frontTemplate.querySelectorAll<HTMLElement>("[id]").forEach((element) => element.removeAttribute("id"));
+      frontTemplate.querySelectorAll<HTMLElement>("a, button, input, textarea, select").forEach((element) => element.setAttribute("tabindex", "-1"));
+
+      for (const side of [-1, 1] as Side[]) {
+        const piece = document.createElement("div");
+        piece.className = "clinic-curl-piece " + (side < 0 ? "clinic-curl-piece--left" : "clinic-curl-piece--right");
+        piece.style.width = halfWidth + "px";
+        piece.style.height = viewportHeight + "px";
+        piece.style.left = (side < 0 ? 0 : halfWidth) + "px";
+        pieces.push(piece);
+
+        for (let index = 0; index < stripCount; index += 1) {
+          const localLeft = index * stripWidth;
+          const globalLeft = (side < 0 ? 0 : halfWidth) + localLeft;
+          const baseCenterX = globalLeft + stripWidth / 2;
+          const distance = side < 0 ? halfWidth - baseCenterX : baseCenterX - halfWidth;
+          const strip = document.createElement("div");
+          strip.className = "clinic-curl-strip";
+          strip.style.left = localLeft + "px";
+          strip.style.width = stripWidth + "px";
+          strip.style.height = viewportHeight + "px";
+
+          const front = frontTemplate.cloneNode(true) as HTMLElement;
+          front.style.position = "absolute";
+          front.style.inset = "0 auto auto 0";
+          front.style.left = -globalLeft + "px";
+          front.style.width = viewportWidth + "px";
+          front.style.height = viewportHeight + "px";
+          front.style.opacity = "1";
+          front.style.visibility = "visible";
+          front.style.pointerEvents = "none";
+
+          const back = document.createElement("div");
+          back.className = "clinic-curl-strip-back";
+          back.setAttribute("aria-hidden", "true");
+          strip.append(front, back);
+          piece.append(strip);
+          strips.push({ element: strip, side, distance, baseCenterX });
+        }
+        layer.append(piece);
+      }
+
+      const seam = document.createElement("div");
+      seam.className = "clinic-curl-seam";
+      seam.setAttribute("aria-hidden", "true");
+      layer.append(seam);
+
+      // Place the next real HTML page underneath the curling front.
+      pages.forEach((page) => {
+        page.style.display = "none";
+        page.setAttribute("aria-hidden", "true");
+        page.setAttribute("inert", "");
+      });
+      incoming.style.display = "block";
+      incoming.removeAttribute("aria-hidden");
+      incoming.removeAttribute("inert");
+      book.append(layer);
+
+      const render = (rawProgress: number) => {
+        const progress = Math.max(0, Math.min(1, rawProgress));
+        seam.style.opacity = String(Math.min(0.95, progress * 5.2) * Math.max(0, 1 - progress * 1.5));
+        seam.style.transform = "translateX(-50%) scaleX(" + Math.max(0.3, 1 - progress * 0.62) + ")";
+        pieces.forEach((piece) => piece.style.setProperty("--progress", String(progress)));
+        const outwardDrift = viewportWidth * 0.55 * progress * progress;
+
+        for (const strip of strips) {
+          const mapped = mapCurl(strip.distance, halfWidth, progress);
+          const desiredCenterX = viewportWidth / 2 + strip.side * (mapped.x + outwardDrift);
+          const translateX = desiredCenterX - strip.baseCenterX;
+          const translateZ = strip.side < 0 ? mapped.z : -mapped.z;
+          const shade = Math.min(0.58, progress * 0.4 + Math.abs(Math.sin(mapped.angle)) * 0.25);
+          const gloss = Math.max(0, Math.cos(Math.abs(mapped.angle) - 0.72)) * Math.pow(progress, 0.35);
+          strip.element.style.setProperty("--curl-shade", String(shade));
+          strip.element.style.setProperty("--curl-gloss", String(gloss));
+          strip.element.style.transform =
+            "translate3d(" + translateX + "px, 0, " + translateZ + "px) " +
+            "rotateY(" + (-strip.side * mapped.angle) + "rad)";
+          strip.element.style.opacity = progress >= 0.999 ? "0" : "1";
+        }
+      };
+
+      render(0);
+      const startedAt = performance.now();
+      const duration = 820;
+      const animate = (now: number) => {
+        const raw = Math.min(1, (now - startedAt) / duration);
+        const eased = raw < 0.5 ? 4 * raw * raw * raw : 1 - Math.pow(-2 * raw + 2, 3) / 2;
+        render(eased);
+        if (raw < 1) window.requestAnimationFrame(animate);
+        else {
+          layer.remove();
+          busy = false;
+          setPage(targetIndex);
+        }
+      };
+      window.requestAnimationFrame(animate);
+    };
+
     book.addEventListener("click", (event: MouseEvent) => {
       if (!(event.target instanceof Element)) return;
       const link = event.target.closest<HTMLAnchorElement>("a[href^='#']");
       if (!link) return;
       const href = link.getAttribute("href");
+      const pageTargets: Record<string, number> = { "#top": 0, "#approach": 1, "#doctor": 2, "#contact": 3 };
       if (!href || !(href in pageTargets)) return;
-      const target = pageTargets[href as keyof typeof pageTargets];
-      if (target === undefined) return;
       event.preventDefault();
-      if (target > pageFlip.getCurrentPageIndex()) pageFlip.flip(target, "top");
-      else if (target < pageFlip.getCurrentPageIndex()) pageFlip.flip(target, "top");
+      turnTo(pageTargets[href]);
     });
+    previous.addEventListener("click", () => turnTo(currentPage - 1));
+    next.addEventListener("click", () => turnTo(currentPage + 1));
 
-    previous.addEventListener("click", () => pageFlip.flipPrev("top"));
-    next.addEventListener("click", () => pageFlip.flipNext("top"));
+    let pointerStart: { x: number; y: number } | null = null;
+    book.addEventListener("pointerdown", (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest("a, button")) { pointerStart = null; return; }
+      pointerStart = { x: event.clientX, y: event.clientY };
+    }, { passive: true });
+    book.addEventListener("pointerup", (event: PointerEvent) => {
+      if (!pointerStart) return;
+      const dx = event.clientX - pointerStart.x;
+      const dy = event.clientY - pointerStart.y;
+      pointerStart = null;
+      if (Math.abs(dx) > 55 && Math.abs(dy) < 85) turnTo(currentPage + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+    book.addEventListener("pointercancel", () => { pointerStart = null; }, { passive: true });
 
-    const updateControls = (pageIndex: number) => {
-      const current = Math.max(0, Math.min(pages.length - 1, Number(pageIndex) || 0));
-      count.textContent = String(current + 1).padStart(2, "0") + " / " + String(pages.length).padStart(2, "0");
-      fill.style.width = (((current + 1) / pages.length) * 100).toFixed(2) + "%";
-      previous.disabled = current === 0;
-      next.disabled = current >= pages.length - 1;
-      book.dataset.currentPage = String(current);
-    };
-
-    pageFlip.on("flip", (event: { data: number }) => updateControls(event.data));
-    pageFlip.on("init", (event: { data?: { page?: number } }) => updateControls(event.data?.page ?? 0));
-    updateControls(0);
-
-    // Keep the live fold attached to the pointer on touchscreens and desktop.
-    // Recalculate using the actual book viewport after rotation or viewport changes.
-    const resizeBook = () => {
-      const width = Math.max(280, book.clientWidth);
-      const height = Math.max(420, book.clientHeight);
-      if (width > 0 && height > 0) pageFlip.update();
-    };
-    window.addEventListener("orientationchange", () => window.setTimeout(resizeBook, 180), { passive: true });
-    window.addEventListener("resize", resizeBook, { passive: true });
+    book.dataset.ready = "true";
+    setPage(0);
   };
 
   if (document.readyState === "loading") {
@@ -498,6 +626,122 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   .doctor-demo-note { max-width:590px; margin:18px auto 0; color:#777f7b; font-size:11px; line-height:1.7; }
   .doctor-more { display:inline-flex; gap:25px; align-items:center; margin-top:28px; padding-bottom:8px; border-bottom:1px solid #82908b; font-size:12px; text-decoration:none; }
   .doctor-more span { font-size:17px; }
+
+
+  /* Native two-sided paper curl, adapted from the standalone paper-reveal prototype. */
+  .clinic-book { transform-style: preserve-3d; }
+  .clinic-book-page {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    background: #efeee9;
+    color: #1e2c31;
+    transform-style: preserve-3d;
+  }
+  .clinic-curl-layer {
+    position: absolute;
+    z-index: 40;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    perspective: 1600px;
+    transform-style: preserve-3d;
+  }
+  .clinic-curl-piece {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    overflow: visible;
+    transform-style: preserve-3d;
+  }
+  .clinic-curl-piece--left { left: 0; }
+  .clinic-curl-piece--right { left: 50%; }
+  .clinic-curl-piece::after {
+    content: "";
+    position: absolute;
+    z-index: 80;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(255,255,255,.38), rgba(2,20,39,.32));
+    opacity: var(--progress, 0);
+  }
+  .clinic-curl-piece--left::after { right: 0; }
+  .clinic-curl-piece--right::after { left: 0; }
+  .clinic-curl-strip {
+    position: absolute;
+    top: 0;
+    overflow: hidden;
+    transform-origin: 50% 50%;
+    transform-style: preserve-3d;
+    backface-visibility: visible;
+    will-change: transform;
+  }
+  .clinic-page-curl-clone {
+    display: block !important;
+    max-width: none !important;
+    transform: none !important;
+    backface-visibility: hidden;
+  }
+  .clinic-curl-strip > .clinic-page-curl-clone { backface-visibility: hidden; }
+  .clinic-curl-strip::before {
+    content: "";
+    position: absolute;
+    z-index: 50;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(105deg, rgba(255,255,255,.04) 0%, rgba(239,249,255,.28) 18%, rgba(255,255,255,.025) 34%, transparent 54%, rgba(2,13,27,.2) 100%),
+      linear-gradient(90deg, rgba(3,17,32,.32), transparent 56%, rgba(223,241,255,.22));
+    opacity: var(--curl-shade, 0);
+  }
+  .clinic-curl-strip::after {
+    content: "";
+    position: absolute;
+    z-index: 60;
+    inset: -1px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent 2%, rgba(240,250,255,.9) 46%, rgba(255,255,255,.06) 58%, transparent 100%);
+    opacity: var(--curl-gloss, 0);
+    mix-blend-mode: screen;
+  }
+  .clinic-curl-strip-back {
+    position: absolute;
+    z-index: 40;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, #e4e0d7 0%, #fbfaf6 22%, #f1efe9 42%, #fffefa 52%, #e8e4db 75%, #f7f4ed 100%);
+    transform: rotateY(180deg) translateZ(.2px);
+    backface-visibility: hidden;
+  }
+  .clinic-curl-strip-back::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(112deg, transparent 22%, rgba(255,255,255,.16) 36%, rgba(255,255,255,.82) 46%, rgba(255,255,255,.14) 53%, transparent 68%);
+    opacity: var(--curl-gloss, 0);
+  }
+  .clinic-curl-seam {
+    position: absolute;
+    z-index: 50;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(180deg, transparent 2%, rgba(235,246,255,.88) 18%, rgba(7,26,48,.55) 52%, rgba(235,246,255,.68) 82%, transparent 100%);
+    box-shadow: 0 0 11px rgba(2,13,28,.28);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .clinic-curl-layer { display: none !important; }
+  }
 
 </style>
 
