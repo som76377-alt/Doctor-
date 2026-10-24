@@ -415,8 +415,8 @@ const homeHref = import.meta.env.BASE_URL;
           : (baseX + halfWidth / 2) / halfWidth;
         const column = Math.max(0, Math.min(segmentCount, Math.round(columnT * segmentCount)));
         const mapped = columnMap[column];
-        const projectedX = mapped.x * hingeCos + mapped.z * hingeSin;
-        const projectedZ = -mapped.x * hingeSin + mapped.z * hingeCos;
+        const projectedX = mapped.x * hingeCos - mapped.z * hingeSin;
+        const projectedZ = mapped.x * hingeSin + mapped.z * hingeCos;
         const localX = half.side < 0 ? halfWidth / 2 - projectedX : -halfWidth / 2 + projectedX;
         const vertical = Math.min(1, Math.max(0, (baseY + height / 2) / height));
         const edgeWeight = Math.sin(vertical * Math.PI);
@@ -450,9 +450,9 @@ const homeHref = import.meta.env.BASE_URL;
           const thicknessOffset = bank === 0 ? -0.9 : 0.9;
           const thicknessX = normalX * thicknessOffset;
           const thicknessZ = normalZ * thicknessOffset;
-          edgeVertices[offset] = edgeX + thicknessX * hingeCos + thicknessZ * hingeSin;
+          edgeVertices[offset] = edgeX + thicknessX * hingeCos - thicknessZ * hingeSin;
           edgeVertices[offset + 1] = baseY + ripple + tear;
-          edgeVertices[offset + 2] = -thicknessX * hingeSin + thicknessZ * hingeCos;
+          edgeVertices[offset + 2] = thicknessX * hingeSin + thicknessZ * hingeCos;
         }
       }
       edgePosition.needsUpdate = true;
@@ -519,11 +519,11 @@ const homeHref = import.meta.env.BASE_URL;
         }
         for (const strip of fallbackStrips) {
           const mapped = mapCurl(strip.distance, halfWidth, progress);
-          const projectedDistance = mapped.x * hingeCos + mapped.z * hingeSin;
+          const projectedDistance = mapped.x * hingeCos - mapped.z * hingeSin;
           const desiredCenterX = viewportWidth / 2 + strip.side * projectedDistance;
           const translateX = desiredCenterX - strip.baseCenterX;
-          const translateZ = -mapped.x * hingeSin + mapped.z * hingeCos;
-          const turnAngle = strip.side * (hingeAngle - mapped.angle);
+          const translateZ = mapped.x * hingeSin + mapped.z * hingeCos;
+          const turnAngle = strip.side * (hingeAngle + mapped.angle);
           const shade = Math.min(0.58, progress * 0.4 + Math.abs(Math.sin(mapped.angle)) * 0.25);
           const gloss = Math.max(0, Math.cos(Math.abs(mapped.angle) - 0.72)) * Math.pow(progress, 0.35);
           strip.element.style.setProperty("--curl-shade", String(shade));
